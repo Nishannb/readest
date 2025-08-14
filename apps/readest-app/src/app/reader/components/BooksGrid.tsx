@@ -20,6 +20,8 @@ import Annotator from './annotator/Annotator';
 import FootnotePopup from './FootnotePopup';
 import HintInfo from './HintInfo';
 import DoubleBorder from './DoubleBorder';
+import AIChatPanel from './AIChatPanel';
+import { useAIChatStore } from '@/store/aiChatStore';
 
 interface BooksGridProps {
   bookKeys: string[];
@@ -100,6 +102,12 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
         const showHeader = viewSettings.showHeader && (scrolled ? showBarsOnScroll : true);
         const showFooter = viewSettings.showFooter && (scrolled ? showBarsOnScroll : true);
 
+        const isAIVisible = useAIChatStore.getState().visibleByBookKey?.[bookKey] ?? false;
+        // set CSS var to squeeze when AI panel is visible (immediately on render)
+        const styleWithAIPad = {
+          ['--ai-panel-pad' as any]: isAIVisible ? '448px' : '0px',
+        };
+
         return (
           <div
             id={`gridcell-${bookKey}`}
@@ -108,6 +116,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               'relative h-full w-full overflow-hidden',
               appService?.hasRoundedWindow && 'rounded-window',
             )}
+            style={styleWithAIPad}
           >
             {isBookmarked && !hoveredBookKey && <Ribbon width={`${horizontalGapPercent}%`} />}
             <HeaderBar
@@ -190,6 +199,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook }) => {
               />
             )}
             <Annotator bookKey={bookKey} />
+            <AIChatPanel bookKey={bookKey} />
             <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} />
             <FooterBar
               bookKey={bookKey}

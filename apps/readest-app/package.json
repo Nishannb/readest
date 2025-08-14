@@ -79,6 +79,7 @@
     "i18next": "^24.2.0",
     "i18next-browser-languagedetector": "^8.0.2",
     "i18next-http-backend": "^3.0.1",
+    "html2canvas": "^1.4.1",
     "iso-639-2": "^3.0.2",
     "iso-639-3": "^3.0.1",
     "js-md5": "^0.8.3",

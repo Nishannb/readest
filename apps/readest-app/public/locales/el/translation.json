@@ -108,7 +108,7 @@
   "Wikipedia": "Βικιπαίδεια",
   "Writing Mode": "Λειτουργία γραφής",
   "Your Library": "Η βιβλιοθήκη σας",
-  "TTS not supported for PDF": "Η μετατροπή κειμένου σε ομιλία δεν υποστηρίζεται για αρχεία PDF",
+  "TTS only supported for PUB files, PDF will be soon supported.": "Η μετατροπή κειμένου σε ομιλία δεν υποστηρίζεται για αρχεία PDF",
   "Override Book Font": "Παράκαμψη γραμματοσειράς βιβλίου",
   "Apply to All Books": "Εφαρμογή σε όλα τα βιβλία",
   "Apply to This Book": "Εφαρμογή σε αυτό το βιβλίο",

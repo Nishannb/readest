@@ -7,6 +7,9 @@ const supabaseAnonKey =
   process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ||
   atob(process.env['NEXT_PUBLIC_DEFAULT_SUPABASE_KEY_BASE64']!);
 
+  console.log('supabaseUrl', supabaseUrl);
+  console.log('supabaseAnonKey', supabaseAnonKey);
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const createSupabaseClient = (accessToken?: string) => {

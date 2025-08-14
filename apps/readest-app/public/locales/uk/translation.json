@@ -108,7 +108,7 @@
   "Wikipedia": "Вікіпедія",
   "Writing Mode": "Режим письма",
   "Your Library": "Ваша бібліотека",
-  "TTS not supported for PDF": "TTS не підтримується для PDF",
+  "TTS only supported for PUB files, PDF will be soon supported.": "TTS не підтримується для PDF",
   "Override Book Font": "Перевизначити шрифт книги",
   "Apply to All Books": "Застосувати до всіх книг",
   "Apply to This Book": "Застосувати лише до цієї книги",

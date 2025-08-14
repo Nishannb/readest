@@ -108,7 +108,7 @@
   "Wikipedia": "विकिपीडिया",
   "Writing Mode": "लेखन मोड",
   "Your Library": "आपकी लाइब्रेरी",
-  "TTS not supported for PDF": "PDF के लिए TTS समर्थित नहीं है",
+  "TTS only supported for PUB files, PDF will be soon supported.": "PDF के लिए TTS समर्थित नहीं है",
   "Override Book Font": "पुस्तक फ़ॉन्ट ओवरराइड करें",
   "Apply to All Books": "सभी पुस्तकों पर लागू करें",
   "Apply to This Book": "इस पुस्तक पर लागू करें",

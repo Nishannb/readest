@@ -8,6 +8,11 @@ export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
   if (['Backspace', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
     event.preventDefault();
   }
+  // Prevent default Save dialog on Cmd+S inside iframe so host can handle it
+  if ((event as any).metaKey && (event.key === 's' || event.key === 'S' || (event as any).code === 'KeyS')) {
+    event.preventDefault();
+    event.stopPropagation?.();
+  }
   window.postMessage(
     {
       type: 'iframe-keydown',
@@ -23,10 +28,31 @@ export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
   );
 };
 
+export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {
+  window.postMessage(
+    {
+      type: 'iframe-keyup',
+      bookKey,
+      key: event.key,
+      code: event.code,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+    },
+    '*',
+  );
+};
+
 export const handleMousedown = (bookKey: string, event: MouseEvent) => {
-  longHoldTimeout = setTimeout(() => {
+  // avoid any potential selection flicker; don't schedule longHold when meta key is used (screenshot mode)
+  if (!event.metaKey) {
+    longHoldTimeout = setTimeout(() => {
+      longHoldTimeout = null;
+    }, LONG_HOLD_THRESHOLD);
+  } else {
     longHoldTimeout = null;
-  }, LONG_HOLD_THRESHOLD);
+  }
 
   window.postMessage(
     {
@@ -39,6 +65,7 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
       clientY: event.clientY,
       offsetX: event.offsetX,
       offsetY: event.offsetY,
+      metaKey: (event as any).metaKey === true,
     },
     '*',
   );
@@ -49,6 +76,14 @@ export const handleMouseup = (bookKey: string, event: MouseEvent) => {
   if ([3, 4].includes(event.button)) {
     event.preventDefault();
   }
+  try {
+    // @ts-ignore
+    if ((window.top as any)?.__READEST_SCREENSHOT_ACTIVE) {
+      event.preventDefault?.();
+      event.stopPropagation?.();
+      return;
+    }
+  } catch {}
   window.postMessage(
     {
       type: 'iframe-mouseup',
@@ -60,12 +95,27 @@ export const handleMouseup = (bookKey: string, event: MouseEvent) => {
       clientY: event.clientY,
       offsetX: event.offsetX,
       offsetY: event.offsetY,
+      // forward metaKey so host can require Cmd being held
+      metaKey: (event as any).metaKey === true,
     },
     '*',
   );
 };
 
 export const handleWheel = (bookKey: string, event: WheelEvent) => {
+  // If the user is pinching (Ctrl/Meta + wheel), prefer zoom. Post a custom event for zoom.
+  if (event.ctrlKey || event.metaKey) {
+    window.postMessage(
+      {
+        type: 'iframe-zoom-wheel',
+        bookKey,
+        deltaY: event.deltaY,
+      },
+      '*',
+    );
+    event.preventDefault();
+    return;
+  }
   window.postMessage(
     {
       type: 'iframe-wheel',
@@ -85,11 +135,61 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
   );
 };
 
+// Safari/WebKit trackpads dispatch gesture events for pinch zoom
+export const handleGestureChange = (bookKey: string, event: any) => {
+  try {
+    const scale = (event as any)?.scale ?? 1;
+    window.postMessage(
+      {
+        type: 'iframe-zoom-gesture',
+        bookKey,
+        scale,
+      },
+      '*',
+    );
+    event.preventDefault?.();
+  } catch {}
+};
+
+export const handleGestureStart = (bookKey: string, event: any) => {
+  try {
+    const scale = (event as any)?.scale ?? 1;
+    window.postMessage(
+      {
+        type: 'iframe-zoom-gesture-start',
+        bookKey,
+        scale,
+      },
+      '*',
+    );
+    event.preventDefault?.();
+  } catch {}
+};
+
+export const handleGestureEnd = (bookKey: string) => {
+  window.postMessage(
+    {
+      type: 'iframe-zoom-gesture-end',
+      bookKey,
+    },
+    '*',
+  );
+};
+
 export const handleClick = (
   bookKey: string,
   doubleClickDisabled: React.MutableRefObject<boolean>,
   event: MouseEvent,
 ) => {
+  // If screenshot mode is active on the top window, ignore clicks to avoid page flip
+  try {
+    // @ts-ignore
+    if ((window.top as any)?.__READEST_SCREENSHOT_ACTIVE) {
+      event.preventDefault?.();
+      event.stopPropagation?.();
+      return;
+    }
+  } catch {}
   const now = Date.now();
 
   if (!doubleClickDisabled.current && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
@@ -116,6 +216,23 @@ export const handleClick = (
     let element: HTMLElement | null = event.target as HTMLElement;
     while (element) {
       if (['sup', 'a', 'audio', 'video'].includes(element.tagName.toLowerCase())) {
+        // Intercept intra-document anchors and suppress engine errors if target is missing
+        if (element.tagName.toLowerCase() === 'a') {
+          const href = (element as HTMLAnchorElement).getAttribute('href') || '';
+          if (href && href.startsWith('#')) {
+            const id = href.slice(1);
+            const doc = element.ownerDocument || document;
+            if (!doc.getElementById(id)) {
+              try {
+                event.preventDefault?.();
+                event.stopPropagation?.();
+              } catch {}
+              try {
+                eventDispatcher.dispatch('toast', { type: 'info', message: 'No match', timeout: 1500 });
+              } catch {}
+            }
+          }
+        }
         return;
       }
       if (

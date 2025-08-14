@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FiSearch } from 'react-icons/fi';
 import { FiCopy } from 'react-icons/fi';
 import { PiHighlighterFill } from 'react-icons/pi';
-import { FaWikipediaW } from 'react-icons/fa';
+import { FaRegStar } from 'react-icons/fa';
 import { BsPencilSquare } from 'react-icons/bs';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { BsTranslate } from 'react-icons/bs';
@@ -30,8 +30,9 @@ import { throttle } from '@/utils/throttle';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import AnnotationPopup from './AnnotationPopup';
 import WiktionaryPopup from './WiktionaryPopup';
-import WikipediaPopup from './WikipediaPopup';
+// Wikipedia popup removed in favor of AI action
 import TranslatorPopup from './TranslatorPopup';
+import { useAIChatStore } from '@/store/aiChatStore';
 
 const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const _ = useTranslation();
@@ -53,7 +54,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const [selection, setSelection] = useState<TextSelection | null>(null);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showWiktionaryPopup, setShowWiktionaryPopup] = useState(false);
-  const [showWikipediaPopup, setShowWikipediaPopup] = useState(false);
+  // const [showWikipediaPopup, setShowWikipediaPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
@@ -85,7 +86,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       setSelection(null);
       setShowAnnotPopup(false);
       setShowWiktionaryPopup(false);
-      setShowWikipediaPopup(false);
+      // setShowWikipediaPopup(false);
       setShowDeepLPopup(false);
     }, 500),
     [],
@@ -115,7 +116,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       // To make the popup not to follow the selection
       setShowAnnotPopup(false);
     };
-    if (bookData.book?.format !== 'PDF') {
+    // enable selection listeners for both EPUB and PDF
+    if (true) {
       view?.renderer?.addEventListener('scroll', handleScroll);
       detail.doc?.addEventListener('touchstart', handleTouchStart);
       detail.doc?.addEventListener('touchmove', handleTouchmove);
@@ -124,6 +126,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         handlePointerup(doc, index, ev),
       );
       detail.doc?.addEventListener('selectionchange', () => handleSelectionchange(doc, index));
+      // forward keyup to support screenshot mode exit
+      detail.doc?.addEventListener('keyup', (e: KeyboardEvent) => {
+        import('../../utils/iframeEventHandlers').then((m) => m.handleKeyup(bookKey, e));
+      });
 
       // Disable the default context menu on mobile devices,
       // although it should but doesn't work on iOS
@@ -180,9 +186,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   useFoliateEvents(view, { onLoad, onDrawAnnotation, onShowAnnotation });
 
   useEffect(() => {
-    handleShowPopup(showAnnotPopup || showWiktionaryPopup || showWikipediaPopup || showDeepLPopup);
+    handleShowPopup(showAnnotPopup || showWiktionaryPopup || showDeepLPopup);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showAnnotPopup, showWiktionaryPopup, showWikipediaPopup, showDeepLPopup]);
+  }, [showAnnotPopup, showWiktionaryPopup, showDeepLPopup]);
 
   useEffect(() => {
     eventDispatcher.on('export-annotations', handleExportMarkdown);
@@ -260,7 +266,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setShowAnnotPopup(true);
     setShowDeepLPopup(false);
     setShowWiktionaryPopup(false);
-    setShowWikipediaPopup(false);
   };
 
   const handleCopy = () => {
@@ -303,6 +308,15 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     if (!appService?.isMobile) {
       setNotebookVisible(true);
     }
+  };
+
+  const setAIPanelVisible = useAIChatStore((s) => s.setVisible);
+  const addAIContext = useAIChatStore((s) => s.addContext);
+  const handleAskAIFromSelection = () => {
+    if (!selection || !selection.text) return;
+    setAIPanelVisible(bookKey, true);
+    addAIContext(bookKey, selection.text);
+    handleDismissPopupAndSelection();
   };
 
   const handleHighlight = (update = false) => {
@@ -373,11 +387,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setShowWiktionaryPopup(true);
   };
 
-  const handleWikipedia = () => {
-    if (!selection || !selection.text) return;
-    setShowAnnotPopup(false);
-    setShowWikipediaPopup(true);
-  };
+  // replaced with AI action
 
   const handleTranslation = () => {
     if (!selection || !selection.text) return;
@@ -487,7 +497,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     { tooltipText: _('Annotate'), Icon: BsPencilSquare, onClick: handleAnnotate },
     { tooltipText: _('Search'), Icon: FiSearch, onClick: handleSearch },
     { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
-    { tooltipText: _('Wikipedia'), Icon: FaWikipediaW, onClick: handleWikipedia },
+    { tooltipText: _('Ask AI'), Icon: FaRegStar, onClick: handleAskAIFromSelection },
     { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
     { tooltipText: _('Speak'), Icon: FaHeadphones, onClick: handleSpeakText },
   ];
@@ -504,16 +514,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           popupHeight={dictPopupHeight}
         />
       )}
-      {showWikipediaPopup && trianglePosition && dictPopupPosition && (
-        <WikipediaPopup
-          text={selection?.text as string}
-          lang={bookData.bookDoc?.metadata.language as string}
-          position={dictPopupPosition}
-          trianglePosition={trianglePosition}
-          popupWidth={dictPopupWidth}
-          popupHeight={dictPopupHeight}
-        />
-      )}
+      {false && trianglePosition && dictPopupPosition && null}
       {showDeepLPopup && trianglePosition && translatorPopupPosition && (
         <TranslatorPopup
           text={selection?.text as string}

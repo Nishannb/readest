@@ -108,7 +108,7 @@
   "Wikipedia": "维基百科",
   "Writing Mode": "排版模式",
   "Your Library": "书库",
-  "TTS not supported for PDF": "PDF 文档暂不支持 TTS",
+  "TTS only supported for PUB files, PDF will be soon supported.": "PDF 文档暂不支持 TTS",
   "Override Book Font": "覆盖书籍字体",
   "Apply to All Books": "应用于所有书籍",
   "Apply to This Book": "应用于此书籍",

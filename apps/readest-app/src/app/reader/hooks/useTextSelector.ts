@@ -71,6 +71,8 @@ export const useTextSelector = (
     // Ideally the popup only shows when the selection is done,
     const sel = doc.getSelection() as Selection;
     if (osPlatform === 'ios' || appService?.isIOSApp) return;
+    // Do not react to selection changes while user holds Cmd (screenshot mode)
+    if ((doc.defaultView?.event as any)?.metaKey) return;
     if (!isValidSelection(sel)) {
       if (!isUpToPopup.current) {
         handleDismissPopup();
@@ -83,13 +85,12 @@ export const useTextSelector = (
       return;
     }
 
-    // On Android no proper events are fired to notify selection done,
-    // we make the popup show when the selection is changed
-    // note that selection may be initiated by a tts speak
+    // Do not show popup during dragging; wait for pointerup to confirm
     if (isTouchStarted.current && osPlatform === 'android') {
+      // android fallback
       makeSelection(sel, index, false);
+      isUpToPopup.current = true;
     }
-    isUpToPopup.current = true;
   };
   const isPointerInsideSelection = (selection: Selection, ev: PointerEvent) => {
     if (selection.rangeCount === 0) return false;
@@ -119,6 +120,7 @@ export const useTextSelector = (
       } else {
         makeSelection(sel, index, true);
       }
+      isUpToPopup.current = true;
     }
   };
   const handleTouchStart = () => {

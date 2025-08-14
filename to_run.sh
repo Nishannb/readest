@@ -1,0 +1,1 @@
+cd /Users/nishanbaral/Desktop/devops/readest && pnpm tauri dev | cat

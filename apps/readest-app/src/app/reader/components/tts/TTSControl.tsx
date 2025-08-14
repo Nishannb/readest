@@ -165,7 +165,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey }) => {
     if (!view || !progress || !viewSettings || !bookData || !bookData.book) return;
     if (bookData.book?.format === 'PDF') {
       eventDispatcher.dispatch('toast', {
-        message: _('TTS not supported for PDF'),
+        message: _('TTS only supported for PUB files, PDF will be soon supported.'),
         type: 'warning',
       });
       return;

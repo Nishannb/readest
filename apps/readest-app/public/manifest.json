@@ -1,23 +1,23 @@
 {
-  "name": "Readest",
-  "short_name": "Readest",
+  "name": "Fumiko AI",
+  "short_name": "Fumiko AI",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "description": "Readest is an open-source eBook reader supporting EPUB, PDF, and sync across devices.",
+  "description": "Fumiko AI is an open-source eBook reader supporting EPUB, PDF, and sync across devices.",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon.png?v=2",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/icon.png",
+      "src": "/icon.png?v=2",
       "type": "image/png",
       "sizes": "256x256"
     },
     {
-      "src": "/icon.png",
+      "src": "/icon.png?v=2",
       "type": "image/png",
       "sizes": "512x512"
     }

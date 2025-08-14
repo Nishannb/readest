@@ -108,7 +108,7 @@
   "Wikipedia": "ウィキペディア",
   "Writing Mode": "書き込みモード",
   "Your Library": "ライブラリー",
-  "TTS not supported for PDF": "PDFではTTSがサポートされていません",
+  "TTS only supported for PUB files, PDF will be soon supported.": "TTS は PUB ファイルでのみサポートされ、PDF はまもなくサポートされる予定です。",
   "Override Book Font": "書籍フォントを上書き",
   "Apply to All Books": "すべての書籍に適用",
   "Apply to This Book": "この書籍に適用",

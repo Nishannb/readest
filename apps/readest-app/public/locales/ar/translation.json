@@ -107,7 +107,7 @@
   "Wikipedia": "ويكيبيديا",
   "Writing Mode": "وضع الكتابة",
   "Your Library": "المكتبة الخاصة بك",
-  "TTS not supported for PDF": "القراءة الصوتية غير مدعومة لملفات PDF",
+  "TTS only supported for PUB files, PDF will be soon supported.": "القراءة الصوتية غير مدعومة لملفات PDF",
   "Override Book Font": "تجاوز خط الكتاب",
   "Apply to All Books": "تطبيق على جميع الكتب",
   "Apply to This Book": "تطبيق على هذا الكتاب",

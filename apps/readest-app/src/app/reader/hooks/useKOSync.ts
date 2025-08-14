@@ -125,9 +125,9 @@ export const useKOSync = (bookKey: string) => {
           if (currentSettings.koreaderSyncDeviceName) return currentSettings.koreaderSyncDeviceName;
           if (appService?.appPlatform === 'tauri') {
             const name = await osType();
-            return `Readest (${name.charAt(0).toUpperCase() + name.slice(1)})`;
+            return `Fumiko AI (${name.charAt(0).toUpperCase() + name.slice(1)})`;
           }
-          return 'Readest';
+          return 'Fumiko AI';
         };
 
         const digest = getDocumentDigest(currentBook);
@@ -191,9 +191,9 @@ export const useKOSync = (bookKey: string) => {
         if (settings.koreaderSyncDeviceName) return settings.koreaderSyncDeviceName;
         if (appService?.appPlatform === 'tauri') {
           const name = await osType();
-          return `Readest (${name.charAt(0).toUpperCase() + name.slice(1)})`;
+          return `Fumiko AI (${name.charAt(0).toUpperCase() + name.slice(1)})`;
         }
-        return 'Readest';
+        return 'Fumiko AI';
       };
 
       const deviceName = await getDeviceName();

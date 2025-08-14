@@ -10,4 +10,13 @@
   "Search in {{count}} Book(s)..._other": "Search in {{count}} books...",
   "{{count}} pages left in chapter_one": "{{count}} page left in chapter",
   "{{count}} pages left in chapter_other": "{{count}} pages left in chapter"
+,
+  "About Readest": "About Fumiko AI",
+  "Download Readest": "Download Fumiko AI",
+  "Help improve Readest": "Help improve Fumiko AI",
+  "Upgrade to Readest Premium": "Upgrade to Fumiko AI Premium",
+  "What's New in Readest": "What's New in Fumiko AI",
+  "A new version of Readest is available!": "A new version of Fumiko AI is available!",
+  "Readest {{newVersion}} is available (installed version {{currentVersion}}).": "Fumiko AI {{newVersion}} is available (installed version {{currentVersion}}).",
+  "Exported from Readest": "Exported from Fumiko AI"
 }

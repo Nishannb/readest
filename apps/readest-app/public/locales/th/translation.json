@@ -277,7 +277,7 @@
   "Sidebar": "แถบข้าง",
   "Disable Translation": "ปิดการแปล",
   "Translation Not Available": "ไม่มีการแปล",
-  "TTS not supported for PDF": "ไม่รองรับ TTS สำหรับ PDF",
+  "TTS only supported for PUB files, PDF will be soon supported.": "ไม่รองรับ TTS สำหรับ PDF",
   "No Timeout": "ไม่จำกัดเวลา",
   "{{value}} minute": "{{value}} นาที",
   "{{value}} minutes": "{{value}} นาที",

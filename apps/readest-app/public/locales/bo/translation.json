@@ -108,7 +108,7 @@
   "Wikipedia": "ཝེ་ཁི་པི་ཌི་ཡ།",
   "Writing Mode": "པར་སྒྲིག་གི་རྣམ་པ།",
   "Your Library": "དཔེ་མཛོད།",
-  "TTS not supported for PDF": "PDF ཡིག་ཆར་ TTS རྒྱབ་སྐྱོར་མི་བྱེད།",
+  "TTS only supported for PUB files, PDF will be soon supported.": "PDF ཡིག་ཆར་ TTS རྒྱབ་སྐྱོར་མི་བྱེད།",
   "Override Book Font": "དཔེ་དེབ་ཀྱི་ཡིག་གཟུགས་བརྗེ་བ།",
   "Apply to All Books": "དཔེ་དེབ་ཡོད་རྒུར་སྤྱོད་པ།",
   "Apply to This Book": "དཔེ་དེབ་འདིར་སྤྱོད་པ།",

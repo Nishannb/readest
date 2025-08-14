@@ -212,7 +212,7 @@
   "Match Diacritics": "Diakritische tekens",
   "TOC": "Inhoudsopgave",
   "Sidebar": "Zijbalk",
-  "TTS not supported for PDF": "TTS niet ondersteund voor PDF",
+  "TTS only supported for PUB files, PDF will be soon supported.": "TTS niet ondersteund voor PDF",
   "No Timeout": "Geen time-out",
   "{{value}} minute": "{{value}} minuut",
   "{{value}} minutes": "{{value}} minuten",

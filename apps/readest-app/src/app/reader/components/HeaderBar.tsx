@@ -10,6 +10,12 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import WindowButtons from '@/components/WindowButtons';
+import { FaRegStar, FaStar } from 'react-icons/fa';
+import { FiZoomIn, FiZoomOut } from 'react-icons/fi';
+import Button from '@/components/Button';
+import { useAIChatStore } from '@/store/aiChatStore';
+import { useBookDataStore } from '@/store/bookDataStore';
+import { getStyles } from '@/utils/style';
 import Dropdown from '@/components/Dropdown';
 import SidebarToggler from './SidebarToggler';
 import BookmarkToggler from './BookmarkToggler';
@@ -51,6 +57,26 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { isSideBarVisible } = useSidebarStore();
   const iconSize16 = useResponsiveSize(16);
+  const isAIVisible = useAIChatStore((s) => s.visibleByBookKey[bookKey] ?? false);
+  const toggleAIVisible = useAIChatStore((s) => s.toggleVisible);
+  const { getViewSettings, setViewSettings, getView } = useReaderStore();
+  const currentZoom = getViewSettings(bookKey)?.zoomLevel ?? 100;
+
+  const applyZoom = (nextZoom: number) => {
+    const vs = getViewSettings(bookKey);
+    if (!vs) return;
+    const clamped = Math.max(100, Math.min(nextZoom, 400));
+    if (clamped === vs.zoomLevel) return;
+    vs.zoomLevel = clamped;
+    setViewSettings(bookKey, vs);
+    const view = getView(bookKey);
+    view?.renderer.setStyles?.(getStyles(vs));
+    const data = useBookDataStore.getState().getBookData(bookKey);
+    const bookDoc = data?.bookDoc;
+    if (bookDoc?.rendition?.layout === 'pre-paginated') {
+      view?.renderer.setAttribute('zoom', `${vs.zoomLevel / 100}`);
+    }
+  };
 
   const handleToggleDropdown = (isOpen: boolean) => {
     setIsDropdownOpen(isOpen);
@@ -68,19 +94,46 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService]);
 
+  // Ensure traffic light is visible in top-left cell even when not hovered
+  useEffect(() => {
+    if (!appService?.hasTrafficLight) return;
+    if (isTopLeft && !isSideBarVisible) {
+      setTrafficLightVisibility(true, { x: 10, y: 20 });
+    }
+    // offset the header padding to leave room for traffic lights
+    if (headerRef.current) {
+      headerRef.current.style.paddingLeft = appService?.hasTrafficLight ? '64px' : '16px';
+    }
+    // compute header height for AI panel offset
+    const updateHeaderHeightVar = () => {
+      const bottom = headerRef.current?.getBoundingClientRect().bottom || 44;
+      document.documentElement.style.setProperty('--reader-header-height', `${Math.max(44, bottom)}px`);
+      // set footer height (reader bottom bar ~72px) to avoid overlap
+      document.documentElement.style.setProperty('--reader-footer-height', `72px`);
+    };
+    updateHeaderHeightVar();
+    window.addEventListener('resize', updateHeaderHeightVar);
+    return () => window.removeEventListener('resize', updateHeaderHeightVar);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appService?.hasTrafficLight, isTopLeft, isSideBarVisible]);
+
   useEffect(() => {
     if (!appService?.hasTrafficLight) return;
     if (isSideBarVisible) return;
 
-    if (hoveredBookKey === bookKey && isTopLeft) {
-      setTrafficLightVisibility(true, { x: 10, y: 20 });
-    } else if (!hoveredBookKey) {
-      setTrafficLightVisibility(false);
+    // Keep traffic lights always visible in the header when applicable.
+    // Only update their position when the current reader cell is hovered.
+    if (isTopLeft) {
+      if (hoveredBookKey === bookKey) {
+        setTrafficLightVisibility(true, { x: 10, y: 20 });
+      } else {
+        setTrafficLightVisibility(true);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService, isSideBarVisible, hoveredBookKey]);
 
-  const isHeaderVisible = hoveredBookKey === bookKey || isDropdownOpen;
+  const isHeaderVisible = true;
   const trafficLightInHeader =
     appService?.hasTrafficLight && !trafficLightInFullscreen && !isSideBarVisible && isTopLeft;
 
@@ -115,7 +168,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           appService?.hasRoundedWindow && 'rounded-window-top-right',
           !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-top-left',
           isHoveredAnim && 'hover-bar-anim',
-          isHeaderVisible ? 'pointer-events-auto visible' : 'pointer-events-none opacity-0',
+           isHeaderVisible ? 'pointer-events-auto visible' : 'pointer-events-none opacity-0',
           isDropdownOpen && 'header-bar-pinned',
         )}
         style={{
@@ -131,6 +184,20 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           </div>
           <BookmarkToggler bookKey={bookKey} />
           <TranslationToggler bookKey={bookKey} />
+          {/* Zoom controls next to Translate */}
+          <Button
+            icon={<FiZoomOut size={iconSize16} />}
+            onClick={() => applyZoom(currentZoom - 25)}
+            disabled={currentZoom <= 100}
+            tooltip='Zoom out'
+            tooltipDirection='bottom'
+          />
+          <Button
+            icon={<FiZoomIn size={iconSize16} />}
+            onClick={() => applyZoom(currentZoom + 25)}
+            tooltip='Zoom in'
+            tooltipDirection='bottom'
+          />
         </div>
 
         <div className='header-title z-15 bg-base-100 pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex'>
@@ -140,8 +207,15 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
 
         <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-4 ps-2'>
-          <SettingsToggler />
+          <Button
+            icon={isAIVisible ? <FaStar size={iconSize16} /> : <FaRegStar size={iconSize16} />}
+            onClick={() => toggleAIVisible(bookKey)}
+            tooltip={isAIVisible ? 'Hide AI' : 'Show AI'}
+            tooltipDirection='bottom'
+          />
+          {/* Swap Notebook (more left) and Settings */}
           <NotebookToggler bookKey={bookKey} />
+          <SettingsToggler />
           <Dropdown
             className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'

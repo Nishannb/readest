@@ -108,7 +108,7 @@
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Mode Menulis",
   "Your Library": "Perpustakaan Anda",
-  "TTS not supported for PDF": "TTS tidak didukung untuk PDF",
+  "TTS only supported for PUB files, PDF will be soon supported.": "TTS tidak didukung untuk PDF",
   "Override Book Font": "Ganti Font Buku",
   "Apply to All Books": "Terapkan ke semua buku",
   "Apply to This Book": "Terapkan ke buku ini",

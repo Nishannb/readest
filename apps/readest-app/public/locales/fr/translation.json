@@ -108,7 +108,7 @@
   "Wikipedia": "Wikipédia",
   "Writing Mode": "Mode écriture",
   "Your Library": "Votre bibliothèque",
-  "TTS not supported for PDF": "La synthèse vocale n'est pas prise en charge pour les fichiers PDF",
+  "TTS only supported for PUB files, PDF will be soon supported.": "La synthèse vocale n'est pas prise en charge pour les fichiers PDF",
   "Override Book Font": "Remplacer la police du livre",
   "Apply to All Books": "Appliquer à tous les livres",
   "Apply to This Book": "Appliquer à ce livre",

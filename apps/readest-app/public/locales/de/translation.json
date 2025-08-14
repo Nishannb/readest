@@ -107,7 +107,7 @@
   "Wikipedia": "Wikipedia",
   "Writing Mode": "Schreibmodus",
   "Your Library": "Ihre Bibliothek",
-  "TTS not supported for PDF": "TTS wird für PDF nicht unterstützt",
+  "TTS only supported for PUB files, PDF will be soon supported.": "TTS wird für PDF nicht unterstützt",
   "Override Book Font": "Buch-Schriftart überschreiben",
   "Apply to All Books": "Auf alle Bücher anwenden",
   "Apply to This Book": "Auf dieses Buch anwenden",

@@ -1,4 +1,5 @@
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -113,6 +114,11 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     viewSettings!.zoomLevel = Math.min(zoomLevel, MAX_ZOOM_LEVEL);
     setViewSettings(sideBarBookKey, viewSettings!);
     view?.renderer.setStyles?.(getStyles(viewSettings!));
+    // if PDF, also set renderer zoom attribute for fixed-layout
+    const { bookDoc } = useBookDataStore.getState().getBookData(sideBarBookKey) || {};
+    if (bookDoc?.rendition?.layout === 'pre-paginated') {
+      view.renderer.setAttribute('zoom', `${viewSettings!.zoomLevel / 100}`);
+    }
   };
 
   const zoomOut = () => {
@@ -121,9 +127,13 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     if (!view?.renderer?.setStyles) return;
     const viewSettings = getViewSettings(sideBarBookKey)!;
     const zoomLevel = viewSettings!.zoomLevel - ZOOM_STEP;
-    viewSettings!.zoomLevel = Math.max(zoomLevel, MIN_ZOOM_LEVEL);
+    viewSettings!.zoomLevel = Math.max(zoomLevel, 100);
     setViewSettings(sideBarBookKey, viewSettings!);
     view?.renderer.setStyles?.(getStyles(viewSettings!));
+    const { bookDoc } = useBookDataStore.getState().getBookData(sideBarBookKey) || {};
+    if (bookDoc?.rendition?.layout === 'pre-paginated') {
+      view.renderer.setAttribute('zoom', `${viewSettings!.zoomLevel / 100}`);
+    }
   };
 
   const resetZoom = () => {
@@ -134,6 +144,10 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     viewSettings!.zoomLevel = 100;
     setViewSettings(sideBarBookKey, viewSettings!);
     view?.renderer.setStyles?.(getStyles(viewSettings!));
+    const { bookDoc } = useBookDataStore.getState().getBookData(sideBarBookKey) || {};
+    if (bookDoc?.rendition?.layout === 'pre-paginated') {
+      view.renderer.setAttribute('zoom', `${viewSettings!.zoomLevel / 100}`);
+    }
   };
 
   const toggleTTS = () => {

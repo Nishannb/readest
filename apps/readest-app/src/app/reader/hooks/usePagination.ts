@@ -101,6 +101,26 @@ export const usePagination = (
               }
             }
           }
+        } else if (msg.data.type === 'iframe-zoom-wheel') {
+          const { deltaY } = msg.data;
+          // pinch-to-zoom: deltaY < 0 zoom in, > 0 zoom out
+          const vs = getViewSettings(bookKey)!;
+          const step = 5; // percent per tick
+          const zoomLevel = vs.zoomLevel + (deltaY < 0 ? step : -step);
+          vs.zoomLevel = Math.max(100, Math.min(zoomLevel, 400));
+          const { setViewSettings } = useReaderStore.getState();
+          setViewSettings(bookKey, vs);
+          viewRef.current?.renderer.setStyles?.(getStyles(vs));
+        } else if (msg.data.type === 'iframe-zoom-gesture' || msg.data.type === 'iframe-zoom-gesture-start') {
+          const { scale } = msg.data; // >1 zoom in, <1 zoom out
+          const vs = getViewSettings(bookKey)!;
+          const base = vs.zoomLevel || 100;
+          const delta = scale > 1 ? 5 : -5;
+          const next = base + delta;
+          vs.zoomLevel = Math.max(100, Math.min(next, 400));
+          const { setViewSettings } = useReaderStore.getState();
+          setViewSettings(bookKey, vs);
+          viewRef.current?.renderer.setStyles?.(getStyles(vs));
         } else if (msg.data.type === 'iframe-wheel' && !viewSettings.scrolled) {
           // The wheel event is handled by the iframe itself in scrolled mode.
           const { deltaY } = msg.data;

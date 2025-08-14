@@ -18,6 +18,9 @@ const posthogKey =
   process.env['NEXT_PUBLIC_POSTHOG_KEY'] ||
   atob(process.env['NEXT_PUBLIC_DEFAULT_POSTHOG_KEY_BASE64']!);
 
+  console.log('posthogKey', posthogKey);
+  console.log('posthogUrl', posthogUrl);
+
 if (typeof window !== 'undefined' && process.env['NODE_ENV'] === 'production' && posthogKey) {
   posthog.init(posthogKey, {
     api_host: posthogUrl,

@@ -108,7 +108,7 @@
   "Wikipedia": "Vikipedi",
   "Writing Mode": "Yazma Modu",
   "Your Library": "Kütüphaneniz",
-  "TTS not supported for PDF": "PDF için TTS desteklenmiyor",
+  "TTS only supported for PUB files, PDF will be soon supported.": "PDF için TTS desteklenmiyor",
   "Override Book Font": "Kitap Yazı Tipini Geçersiz Kıl",
   "Apply to All Books": "Tüm kitaplara uygula",
   "Apply to This Book": "Bu kitaba uygula",
