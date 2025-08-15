@@ -1,0 +1,57 @@
+name: Build Windows x64
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, develop, perplexity ]
+    paths:
+      - 'apps/readest-app/**'
+      - 'packages/**'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: x86_64-pc-windows-msvc
+        override: true
+        
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: |
+        cd apps/readest-app
+        pnpm install
+        
+    - name: Build frontend
+      run: |
+        cd apps/readest-app
+        pnpm build
+        
+    - name: Build Windows x64 app
+      run: |
+        cd apps/readest-app
+        cargo tauri build --target x86_64-pc-windows-msvc
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: readest-windows-x64
+        path: apps/readest-app/src-tauri/target/x86_64-pc-windows-msvc/release/
+        retention-days: 30
