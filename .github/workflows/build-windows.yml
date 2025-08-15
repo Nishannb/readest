@@ -20,7 +20,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
         
     - name: Setup Rust
       uses: actions-rs/toolchain@v1
@@ -34,9 +33,19 @@ jobs:
       with:
         version: 8
         
+    - name: Install pnpm globally
+      run: npm install -g pnpm
+        
+    - name: Show directory structure
+      run: |
+        dir
+        echo "Current directory: %CD%"
+        
     - name: Install dependencies
       run: |
         cd apps/readest-app
+        dir
+        echo "App directory: %CD%"
         pnpm install
         
     - name: Build frontend
