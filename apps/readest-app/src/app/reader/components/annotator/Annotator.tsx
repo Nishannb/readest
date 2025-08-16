@@ -23,6 +23,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
+import { usePDFAnnotations } from '../../hooks/usePDFAnnotations';
 import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/utils/toc';
@@ -106,6 +107,14 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     handleShowPopup,
     handleUpToPopup,
   } = useTextSelector(bookKey, setSelection, handleDismissPopup);
+
+  // PDF annotation handling
+  const {
+    createPDFAnnotation,
+    removePDFAnnotation,
+    updatePDFAnnotation,
+    isPDFBook
+  } = usePDFAnnotations(bookKey, view);
 
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -322,6 +331,28 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const handleHighlight = (update = false) => {
     if (!selection || !selection.text) return;
     setHighlightOptionsVisible(true);
+    
+    // Handle PDF annotations differently
+    if (isPDFBook && view?.book?.type === 'pdf') {
+      const style = settings.globalReadSettings.highlightStyle;
+      const color = settings.globalReadSettings.highlightStyles[style];
+      
+      // Create PDF annotation
+      const annotation = createPDFAnnotation(
+        document.getSelection()!,
+        style,
+        color,
+        selection.text,
+        ''
+      );
+      
+      if (annotation) {
+        setSelection({ ...selection, annotated: true });
+      }
+      return;
+    }
+    
+    // Handle EPUB annotations (existing logic)
     const { booknotes: annotations = [] } = config;
     const cfi = view?.getCFI(selection.index, selection.range);
     if (!cfi) return;
