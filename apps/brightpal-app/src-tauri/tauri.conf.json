@@ -1,0 +1,161 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "BrightPal AI",
+  "mainBinaryName": "brightpal",
+  "identifier": "com.nishan.brightpal",
+  "version": "../package.json",
+  "build": {
+    "frontendDist": "../out",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": {
+        "default-src": "'self' 'unsafe-inline' blob: data: customprotocol: asset: http://asset.localhost ipc: http://ipc.localhost",
+        "connect-src": "'self' blob: data: asset: http://asset.localhost ipc: http://ipc.localhost http://192.168.1.7:11500 https://*.sentry.io https://*.deepl.com https://*.wikipedia.org https://*.wiktionary.org https://*.brightpal.com wss://speech.platform.bing.com https://*.cloudflarestorage.com https://translate.googleapis.com https://translate.toil.cc https://*.microsofttranslator.com https://edge.microsoft.com https://*.googleusercontent.com https://sclbiwke3f.execute-api.ap-northeast-1.amazonaws.com https://*.stripe.com",
+        "img-src": "'self' blob: data: asset: http://asset.localhost https://*",
+        "style-src": "'self' 'unsafe-inline' blob: asset: http://asset.localhost https://cdn.jsdelivr.net https://fonts.googleapis.com https://chinese-fonts-cdn.netlify.app",
+        "font-src": "'self' blob: data: asset: http://asset.localhost tauri: https://db.onlinewebfonts.com https://cdn.jsdelivr.net https://fonts.gstatic.com https://chinese-fonts-cdn.netlify.app",
+        "frame-src": "'self' blob: asset: http://asset.localhost https://*.stripe.com",
+        "script-src": "'self' 'unsafe-inline' 'unsafe-eval' blob: asset: http://asset.localhost https://*.sentry.io https://*.stripe.com"
+      },
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": [
+            "$RESOURCE/**",
+            "$APPDATA/**/*",
+            "$APPCACHE/**/*",
+            "$TEMP/**/*",
+            "/private/var/mobile/Containers/Data/Application/**/*"
+          ],
+          "deny": []
+        }
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Productivity",
+    "icon": [
+      "icons/icon.icns",
+      "icons/icon.ico",
+      "icons/64x64.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png"
+    ],
+    "resources": [],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "12.0"
+    },
+    "linux": {
+      "deb": {
+        "section": "text"
+      }
+    },
+    "android": {
+      "minSdkVersion": 26
+    },
+    "iOS": {
+      "developmentTeam": "J5W48D69VR",
+      "minimumSystemVersion": "14.0"
+    },
+    "fileAssociations": [
+      {
+        "name": "epub",
+        "ext": ["epub"],
+        "description": "EPUB file",
+        "mimeType": "application/epub+zip",
+        "role": "Viewer"
+      },
+      {
+        "name": "mobi",
+        "ext": ["mobi"],
+        "description": "MOBI file",
+        "mimeType": "application/x-mobipocket-ebook",
+        "role": "Viewer"
+      },
+      {
+        "name": "azw",
+        "ext": ["azw", "azw3"],
+        "description": "AZW file",
+        "mimeType": "application/vnd.amazon.ebook",
+        "role": "Viewer"
+      },
+      {
+        "name": "fb2",
+        "ext": ["fb2"],
+        "description": "FB2 file",
+        "mimeType": "application/x-fictionbook+xml",
+        "role": "Viewer"
+      },
+      {
+        "name": "cbz",
+        "ext": ["cbz"],
+        "description": "CBZ file",
+        "mimeType": "application/vnd.comicbook+zip",
+        "role": "Viewer"
+      },
+      {
+        "name": "pdf",
+        "ext": ["pdf"],
+        "description": "PDF file",
+        "mimeType": "application/pdf",
+        "role": "Viewer"
+      }
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "fs": {
+      "requireLiteralLeadingDot": false
+    },
+    "cli": {
+      "description": "BrightPal CLI",
+      "args": [
+        {
+          "name": "file1",
+          "index": 1,
+          "takesValue": true
+        },
+        {
+          "name": "file2",
+          "index": 2,
+          "takesValue": true
+        },
+        {
+          "name": "file3",
+          "index": 3,
+          "takesValue": true
+        },
+        {
+          "name": "file4",
+          "index": 4,
+          "takesValue": true
+        }
+      ]
+    },
+    "deep-link": {
+      "mobile": [{ "host": "web.brightpal.com" }],
+      "desktop": {
+        "schemes": ["brightpal"]
+      }
+    },
+    "updater": {
+      "pubkey": "RWQB2Qvo5I0IcC3k04woA8VyZQno/xlsJjd/uCHUqR98zeF/fkcLH24u",
+      "endpoints": [
+        "https://mero-domain.com/updates/latest.json",
+        "https://mero-domain.com/updates/latest.json"
+      ]
+    }
+  }
+}

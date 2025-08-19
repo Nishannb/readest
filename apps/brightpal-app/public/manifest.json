@@ -1,0 +1,26 @@
+{
+  "name": "BrightPal AI",
+  "short_name": "BrightPal AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "description": "BrightPal AI is an open-source eBook reader supporting EPUB, PDF, and sync across devices.",
+  "icons": [
+    {
+      "src": "/favicon.ico?v=2",
+      "type": "image/x-icon",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/favicon.ico?v=2",
+      "type": "image/x-icon",
+      "sizes": "256x256"
+    },
+    {
+      "src": "/favicon.ico?v=2",
+      "type": "image/x-icon",
+      "sizes": "512x512"
+    }
+  ],
+  "splash_pages": null
+}

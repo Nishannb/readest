@@ -26,16 +26,16 @@ This is the most reliable method and will produce a proper Windows executable.
 
 3. **Or build manually:**
    ```bash
-   cd apps/readest-app
+   cd apps/brightpal-app
    rustup target add x86_64-pc-windows-msvc
    pnpm install
    pnpm build
-   cargo tauri build --target x86_64-pc-windows-msvc
+   pnpm build-win-x64
    ```
 
-4. **Output:** The Windows executable will be in `apps/readest-app/src-tauri/target/x86_64-pc-windows-msvc/release/`
+4. **Output:** The Windows executable will be in `apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/`
 
-## Option 2: GitHub Actions (CI/CD)
+## Option 2: GitHub Actions (CI/CD) - Best for macOS Users
 
 Use the provided GitHub Actions workflow to build automatically:
 
@@ -43,6 +43,8 @@ Use the provided GitHub Actions workflow to build automatically:
 2. Go to Actions → "Build Windows x64"
 3. Click "Run workflow"
 4. Download the artifacts when complete
+
+**This is the recommended approach if you're on macOS!**
 
 ## Option 3: Docker (Advanced)
 
@@ -65,6 +67,7 @@ The build fails on macOS because:
 1. **"assert.h not found"** - This is the cross-compilation issue described above
 2. **Missing Windows target** - Run `rustup target add x86_64-pc-windows-msvc`
 3. **Build script permissions** - Right-click PowerShell script → Properties → Unblock
+4. **Path issues** - Ensure you're in the correct directory (`apps/brightpal-app`)
 
 ### Getting Help
 
@@ -79,6 +82,23 @@ After a successful build, you'll find:
 - `readest.exe` - The main Windows executable
 - Various DLL files and resources
 - The app will be ready to run on Windows x64 systems
+
+## Quick Start for Windows Users
+
+1. **Install prerequisites:**
+   - Install Rust: https://rustup.rs/
+   - Install Node.js: https://nodejs.org/
+   
+2. **Clone and build:**
+   ```bash
+   git clone <your-repo-url>
+   cd readest
+   # Double-click build-windows.bat or run build-windows.ps1
+   ```
+
+3. **Share the app:**
+   - Copy the entire `release` folder
+   - Your friend can run `readest.exe` directly
 
 
 

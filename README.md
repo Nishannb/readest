@@ -1,11 +1,11 @@
 <div align="center">
-  <a href="https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme" target="_blank">
-    <img src="https://github.com/readest/readest/blob/main/apps/readest-app/src-tauri/icons/icon.png?raw=true" alt="Readest Logo" width="20%" />
+  <a href="https://brightpal.com?utm_source=github&utm_medium=referral&utm_campaign=readme" target="_blank">
+    <img src="https://github.com/Nishannb/readest/blob/main/apps/brightpal-app/src-tauri/icons/icon.png?raw=true" alt="BrightPal Logo" width="20%" />
   </a>
-  <h1>Readest</h1>
+  <h1>BrightPal</h1>
   <br>
 
-[Readest][link-website] is an open-source ebook reader designed for immersive and deep reading experiences. Built as a modern rewrite of [Foliate](https://github.com/johnfactotum/foliate), it leverages [Next.js 15](https://github.com/vercel/next.js) and [Tauri v2](https://github.com/tauri-apps/tauri) to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.
+[BrightPal][link-website] is an open-source ebook reader designed for immersive and deep reading experiences. Built on top of the [Readest](https://github.com/readest/readest) project, it leverages [Next.js 15](https://github.com/vercel/next.js) and [Tauri v2](https://github.com/tauri-apps/tauri) to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.
 
 [![Website][badge-website]][link-website]
 [![Web App][badge-web-app]][link-web-readest]
@@ -35,8 +35,8 @@
 </p>
 
 <div align="center">
-  <a href="https://readest.com" target="_blank">
-    <img src="./data/screenshots/landing_all_platforms.png" alt="Readest Banner" width="100%" />
+  <a href="https://brightpal.com" target="_blank">
+    <img src="./data/screenshots/landing_all_platforms.png" alt="BrightPal Banner" width="100%" />
   </a>
 </div>
 
@@ -54,7 +54,7 @@
 | **Dictionary/Wikipedia Lookup**         | Instantly look up words and terms when reading.                                                | ✅         |
 | **[Parallel Read][link-parallel-read]** | Read two books or documents simultaneously in a split-screen view.                             | ✅         |
 | **Customize Font and Layout**           | Adjust font, layout, theme mode, and theme colors for a personalized experience.               | ✅         |
-| **File Association and Open With**      | Quickly open files in Readest in your file browser with one-click.                             | ✅         |
+| **File Association and Open With**      | Quickly open files in BrightPal in your file browser with one-click.                             | ✅         |
 | **Sync across Platforms**               | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms. | ✅         |
 | **Translate with DeepL**                | From a single sentence to the entire book—translate instantly with DeepL.                      | ✅         |
 | **Translate with Yandex**               | Instantly translate text or books using Yandex Translate.                                      | ✅         |
@@ -109,16 +109,16 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 ### Platform-Specific Downloads
 
-- macOS / iOS / iPadOS : Search for "Readest" on the [App Store][link-appstore], also available on TestFlight for beta test (send your Apple ID to <readestapp@gmail.com> to request access).
-- Windows / Linux / Android: Visit [https://readest.com][link-website] or the [Releases on GitHub][link-gh-releases].
-- Web: Visit [https://web.readest.com][link-web-readest].
+- macOS / iOS / iPadOS : Search for "BrightPal" on the [App Store][link-appstore], also available on TestFlight for beta test (send your Apple ID to <nishan@brightpal.com> to request access).
+- Windows / Linux / Android: Visit [https://brightpal.com][link-website] or the [Releases on GitHub][link-gh-releases].
+- Web: Visit [https://web.brightpal.com][link-web-readest].
 
 ## Requirements
 
 - **Node.js** and **pnpm** for Next.js development
 - **Rust** and **Cargo** for Tauri development
 
-For the best experience to build Readest for yourself, use a recent version of Node.js and Rust. Refer to the [Tauri documentation](https://v2.tauri.app/start/prerequisites/) for details on setting up the development environment prerequisites on different platforms.
+For the best experience to build BrightPal for yourself, use a recent version of Node.js and Rust. Refer to the [Tauri documentation](https://v2.tauri.app/start/prerequisites/) for details on setting up the development environment prerequisites on different platforms.
 
 ```bash
 nvm install v22
@@ -129,12 +129,12 @@ rustup update
 
 ## Getting Started
 
-To get started with Readest, follow these steps to clone and build the project.
+To get started with BrightPal, follow these steps to clone and build the project.
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/readest/readest.git
+git clone https://github.com/Nishannb/readest.git
 cd readest
 ```
 
@@ -145,7 +145,7 @@ cd readest
 git submodule update --init --recursive
 pnpm install
 # copy pdfjs-dist to Next.js public directory
-pnpm --filter @readest/readest-app setup-pdfjs
+pnpm --filter @brightpal/brightpal-app setup-pdfjs
 ```
 
 ### 3. Verify Dependencies Installation
@@ -251,7 +251,7 @@ Please check the [wiki][link-gh-wiki] of this project for more information on de
 
 ## Contributors
 
-Readest is open-source, and contributions are welcome! Feel free to open issues, suggest features, or submit pull requests. Please **review our [contributing guidelines](CONTRIBUTING.md) before you start**. We also welcome you to join our [Discord][link-discord] community for either support or contributing guidance.
+BrightPal is open-source, and contributions are welcome! Feel free to open issues, suggest features, or submit pull requests. Please **review our [contributing guidelines](CONTRIBUTING.md) before you start**. We also welcome you to join our [Discord][link-discord] community for either support or contributing guidance.
 
 <a href="https://github.com/readest/readest/graphs/contributors">
   <p align="left">
@@ -261,7 +261,7 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
 
 ## Support
 
-If Readest has been useful to you, consider supporting its development. Your contribution helps us squash bugs faster, improve performance, and keep building great features.
+If BrightPal has been useful to you, consider supporting its development. Your contribution helps us squash bugs faster, improve performance, and keep building great features.
 
 ### How to Donate
 
@@ -275,7 +275,7 @@ If Readest has been useful to you, consider supporting its development. Your con
 
 ## License
 
-Readest is free software: you can redistribute it and/or modify it under the terms of the [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See the [LICENSE](LICENSE) file for details.
+BrightPal is free software built on top of the Readest project. You can redistribute it and/or modify it under the terms of the [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See the [LICENSE](LICENSE) file for details.
 
 The following libraries and frameworks are used in this software:
 
@@ -296,10 +296,10 @@ The following fonts are utilized in this software, either bundled within the app
 
 ---
 
-<div align="center" style="color: gray;">Happy reading with Readest!</div>
+<div align="center" style="color: gray;">Happy reading with BrightPal!</div>
 
-[badge-website]: https://img.shields.io/badge/website-readest.com-orange
-[badge-web-app]: https://img.shields.io/badge/read%20online-web.readest.com-orange
+[badge-website]: https://img.shields.io/badge/website-brightpal.com-orange
+[badge-web-app]: https://img.shields.io/badge/read%20online-web.brightpal.com-orange
 [badge-license]: https://img.shields.io/github/license/readest/readest?color=teal
 [badge-release]: https://img.shields.io/github/release/readest/readest?color=green
 [badge-platforms]: https://img.shields.io/badge/platforms-macOS%2C%20Windows%2C%20Linux%2C%20Android%2C%20iOS%2C%20Web%2C%20PWA-green
@@ -311,8 +311,8 @@ The following fonts are utilized in this software, either bundled within the app
 [badge-deepwiki]: https://deepwiki.com/badge.svg
 [link-donate]: https://donate.readest.com/?tickers=btc%2Ceth%2Csol%2Cusdc
 [link-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
-[link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
-[link-web-readest]: https://web.readest.com
+[link-website]: https://brightpal.com?utm_source=github&utm_medium=referral&utm_campaign=readme
+[link-web-readest]: https://web.brightpal.com
 [link-gh-releases]: https://github.com/readest/readest/releases
 [link-gh-commits]: https://github.com/readest/readest/commits/main
 [link-gh-pulse]: https://github.com/readest/readest/pulse

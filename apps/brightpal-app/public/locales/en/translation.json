@@ -1,0 +1,28 @@
+{
+  "LXGW WenKai GB Screen": "LXGW WenKai SC",
+  "LXGW WenKai TC": "LXGW WenKai TC",
+  "Source Han Serif CN VF": "Source Han Serif",
+  "Huiwen-mincho": "Huiwen Mincho",
+  "KingHwa_OldSong": "KingHwa Song",
+  "Are you sure to delete {{count}} selected book(s)?_one": "Are you sure to delete {{count}} selected book?",
+  "Are you sure to delete {{count}} selected book(s)?_other": "Are you sure to delete {{count}} selected books?",
+  "Search in {{count}} Book(s)..._one": "Search in {{count}} book...",
+  "Search in {{count}} Book(s)..._other": "Search in {{count}} books...",
+  "{{count}} pages left in chapter_one": "{{count}} page left in chapter",
+  "{{count}} pages left in chapter_other": "{{count}} pages left in chapter",
+  "Create Note": "Create Note",
+  "Highlighted Text": "Highlighted Text",
+  "Page {{page}}": "Page {{page}}",
+  "Enter your note here...": "Enter your note here...",
+  "Cancel": "Cancel",
+  "Please enter note content": "Please enter note content",
+  "Failed to create note. Please try again.": "Failed to create note. Please try again."
+  "About Brightpal": "About BrightPal AI",
+  "Download BrightPal": "Download BrightPal AI",
+  "Help improve BrightPal": "Help improve BrightPal AI",
+  "Upgrade to BrightPal Premium": "Upgrade to BrightPal AI Premium",
+  "What's New in BrightPal": "What's New in BrightPal AI",
+  "A new version of BrightPal is available!": "A new version of BrightPal AI is available!",
+  "BrightPal {{newVersion}} is available (installed version {{currentVersion}}).": "BrightPal AI {{newVersion}} is available (installed version {{currentVersion}}).",
+  "Exported from BrightPal": "Exported from BrightPal AI"
+}

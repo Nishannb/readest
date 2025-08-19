@@ -1,5 +1,5 @@
 @echo off
-echo Building Readest for Windows x64...
+echo Building BrightPal for Windows x64...
 
 REM Check if Rust is installed
 rustc --version >nul 2>&1
@@ -29,7 +29,7 @@ echo Adding Windows x64 target...
 rustup target add x86_64-pc-windows-msvc
 
 REM Navigate to the app directory
-cd apps\readest-app
+cd apps\brightpal-app
 
 REM Install dependencies
 echo Installing dependencies...

@@ -1,0 +1,62 @@
+import { AppService } from '@/types/system';
+import { BRIGHTPAL_NODE_BASE_URL, BRIGHTPAL_WEB_BASE_URL } from './constants';
+
+declare global {
+  interface Window {
+    __BRIGHTPAL_CLI_ACCESS?: boolean;
+  }
+}
+
+export const isTauriAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
+export const isWebAppPlatform = () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'web';
+export const hasCli = () => window.__BRIGHTPAL_CLI_ACCESS === true;
+export const isPWA = () => window.matchMedia('(display-mode: standalone)').matches;
+export const getBaseUrl = () => process.env['NEXT_PUBLIC_API_BASE_URL'] ?? BRIGHTPAL_WEB_BASE_URL;
+export const getNodeBaseUrl = () =>
+  process.env['NEXT_PUBLIC_NODE_BASE_URL'] ?? BRIGHTPAL_NODE_BASE_URL;
+
+const isWebDevMode = () => process.env['NODE_ENV'] === 'development' && isWebAppPlatform();
+
+// Dev API only in development mode and web platform
+// with command `pnpm dev-web`
+// for production build or tauri app use the production Web API
+export const getAPIBaseUrl = () => (isWebDevMode() ? '/api' : `${getBaseUrl()}/api`);
+
+// For Node.js API that currently not supported in some edge runtimes
+export const getNodeAPIBaseUrl = () => (isWebDevMode() ? '/api' : `${getNodeBaseUrl()}/api`);
+
+export interface EnvConfigType {
+  getAppService: () => Promise<AppService>;
+}
+
+let nativeAppService: AppService | null = null;
+const getNativeAppService = async () => {
+  if (!nativeAppService) {
+    const { NativeAppService } = await import('@/services/nativeAppService');
+    nativeAppService = new NativeAppService();
+    await nativeAppService.loadSettings();
+  }
+  return nativeAppService;
+};
+
+let webAppService: AppService | null = null;
+const getWebAppService = async () => {
+  if (!webAppService) {
+    const { WebAppService } = await import('@/services/webAppService');
+    webAppService = new WebAppService();
+    await webAppService.loadSettings();
+  }
+  return webAppService;
+};
+
+const environmentConfig: EnvConfigType = {
+  getAppService: async () => {
+    if (isTauriAppPlatform()) {
+      return getNativeAppService();
+    } else {
+      return getWebAppService();
+    }
+  },
+};
+
+export default environmentConfig;

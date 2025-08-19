@@ -1,8 +1,8 @@
 // index.js
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-const PRODUCT_NAME = "Readest - Lifetime Access";
-const PRODUCT_DESCRIPTION = "One-time payment for lifetime access to Readest PDF reader";
+const PRODUCT_NAME = "BrightPal - Lifetime Access";
+const PRODUCT_DESCRIPTION = "One-time payment for lifetime access to BrightPal PDF reader";
 const AMOUNT_CENTS = 1000; // $10
 const CURRENCY = "usd";
 
@@ -55,7 +55,7 @@ async function createPaymentIntent(data) {
     description: PRODUCT_DESCRIPTION,
     receipt_email: data.email,
     metadata: {
-      product: "readest-lifetime",
+      product: "brightpal-lifetime",
       payment_type: "one_time",
       app_version: data.appVersion || "unknown",
       platform: data.platform || "desktop",
@@ -133,7 +133,7 @@ async function createCheckoutSession(data) {
     cancel_url: `${data.app_domain || "https://your-production-app.com"}/onboarding?canceled=true`,
     customer_email: data.email,
     metadata: {
-      product: "readest-lifetime",
+      product: "brightpal-lifetime",
       payment_type: "one_time",
       app_version: data.appVersion || "unknown",
       platform: data.platform || "desktop",
@@ -189,62 +189,48 @@ async function verifyPayment(payment_intent_id) {
 }
 
 async function checkPaymentStatus(data) {
-  try {
-    // Verify customer exists and has paid
-    const customer = await stripe.customers.retrieve(data.stripeCustomerId);
-    
-    if (!customer || customer.email !== data.email) {
-      return {
-        success: false,
-        error: "Invalid customer",
-        error_type: "invalid_customer"
-      };
-    }
-
-    // Check if customer has successful payments
-    const payments = await stripe.paymentIntents.list({
-      customer: customer.id,
-      limit: 100
-    });
-
-    const hasPaid = payments.data.some(p => p.status === 'succeeded');
-    
-    if (!hasPaid) {
+    try {
+      // 1) Find the customer either by explicit id or by email
+      let customer = null;
+      if (data.stripe_customer_id) {
+        customer = await stripe.customers.retrieve(data.stripe_customer_id);
+      } else if (data.email) {
+        const list = await stripe.customers.list({ email: data.email, limit: 1 });
+        if (list.data && list.data.length > 0) {
+          customer = list.data[0];
+        }
+      }
+  
+      if (!customer) {
+        return { success: true, hasPaid: false, error: "Customer not found" };
+      }
+  
+      // 2) Check for any succeeded payments
+      const payments = await stripe.paymentIntents.list({ customer: customer.id, limit: 50 });
+      const succeeded = payments.data.filter((p) => p.status === 'succeeded');
+      if (!succeeded.length) {
+        return { success: true, hasPaid: false, error: "No successful payments" };
+      }
+  
+      // 3) Verify device binding against customer metadata
+      const storedDeviceId = customer.metadata?.deviceId || null;
+      const deviceVerified = !!storedDeviceId && !!data.deviceId && storedDeviceId === data.deviceId;
+  
+      const latest = succeeded[0];
       return {
         success: true,
-        hasPaid: false,
-        error: "No successful payments found"
+        hasPaid: true,
+        device_verified: deviceVerified,
+        amount: latest.amount,
+        currency: latest.currency,
+        customer_email: customer.email,
+        payment_date: latest.created ? new Date(latest.created * 1000).toISOString() : undefined,
       };
+    } catch (e) {
+      console.error('checkPaymentStatus error:', e);
+      return { success: false, error: 'verification_failed', error_type: 'verification_error' };
     }
-
-    // Verify device binding
-    const storedDeviceId = customer.metadata.deviceId;
-    const deviceVerified = storedDeviceId === data.deviceId;
-
-    // Get latest payment info
-    const latestPayment = payments.data.find(p => p.status === 'succeeded');
-
-    return {
-      success: true,
-      hasPaid: true,
-      device_verified: deviceVerified,
-      amount: latestPayment.amount,
-      currency: latestPayment.currency,
-      customer_email: customer.email,
-      payment_date: new Date(latestPayment.created * 1000).toISOString(),
-      deviceId: storedDeviceId,
-      userId: customer.metadata.userId
-    };
-
-  } catch (error) {
-    console.error("Error checking payment status:", error);
-    return {
-      success: false,
-      error: "Failed to verify payment status",
-      error_type: "verification_error"
-    };
   }
-}
 
 async function createRefund(payment_intent_id, reason = "requested_by_customer") {
   const refund = await stripe.refunds.create({

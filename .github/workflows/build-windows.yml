@@ -5,7 +5,7 @@ on:
   push:
     branches: [ main, develop, perplexity ]
     paths:
-      - 'apps/readest-app/**'
+      - 'apps/brightpal-app/**'
       - 'packages/**'
 
 jobs:
@@ -43,24 +43,24 @@ jobs:
         
     - name: Install dependencies
       run: |
-        cd apps/readest-app
+        cd apps/brightpal-app
         dir
         echo "App directory: %CD%"
         pnpm install
         
     - name: Build frontend
       run: |
-        cd apps/readest-app
+        cd apps/brightpal-app
         pnpm build
         
     - name: Build Windows x64 app
       run: |
-        cd apps/readest-app
+        cd apps/brightpal-app
         cargo tauri build --target x86_64-pc-windows-msvc
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: readest-windows-x64
-        path: apps/readest-app/src-tauri/target/x86_64-pc-windows-msvc/release/
+        path: apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/
         retention-days: 30

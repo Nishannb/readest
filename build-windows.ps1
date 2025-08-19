@@ -35,7 +35,7 @@ Write-Host "Adding Windows x64 target..." -ForegroundColor Yellow
 rustup target add x86_64-pc-windows-msvc
 
 # Navigate to the app directory
-Set-Location "apps\readest-app"
+Set-Location "apps\brightpal-app"
 
 # Install dependencies
 Write-Host "Installing dependencies..." -ForegroundColor Yellow

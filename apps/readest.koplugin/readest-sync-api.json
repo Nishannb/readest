@@ -1,6 +1,6 @@
 {
-    "base_url": "https://web.readest.com/api",
-    "name": "readest-sync-api",
+      "base_url": "https://web.brightpal.com/api",
+  "name": "brightpal-sync-api",
     "methods": {
         "pullChanges": {
             "path": "/sync",

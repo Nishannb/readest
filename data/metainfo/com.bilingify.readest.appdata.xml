@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>com.bilingify.readest</id>
+  <id>com.nishan.brightpal</id>
 
-  <name>Fumiko AI</name>
+      <name>BrightPal AI</name>
   <summary>Modern, feature-rich ebook reader for immersive reading experiences</summary>
-  <icon type="stock">com.bilingify.readest</icon>
+  <icon type="stock">com.nishan.brightpal</icon>
 
   <description>
-    <p>Fumiko AI is a modern, feature-rich ebook reader designed for avid readers offering seamless cross-platform access, powerful tools, and an intuitive interface to elevate your reading experience.</p>
-    <p>Built as a modern rewrite of Foliate, Fumiko AI leverages Next.js 15 and Tauri v2 to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.</p>
+    <p>BrightPal AI is a modern, feature-rich ebook reader designed for avid readers offering seamless cross-platform access, powerful tools, and an intuitive interface to elevate your reading experience.</p>
+    <p>Built as a modern rewrite of Foliate, BrightPal AI leverages Next.js 15 and Tauri v2 to deliver a smooth, cross-platform experience across macOS, Windows, Linux, Android, iOS, and the Web.</p>
     <p>Whether you're analyzing complex texts, immersing yourself in stories, or exploring new ideas, Readest adapts to your needs with powerful features for deep, thoughtful reading.</p>
     <p>Key features include:</p>
     <ul>
@@ -24,9 +24,9 @@
       <li>Cross-platform synchronization of book files, reading progress, notes, and bookmarks across all supported platforms.</li>
       <li>Text-to-Speech functionality for a more accessible reading experience.</li>
       <li>Organize, sort, and manage your entire ebook library with advanced library management tools.</li>
-      <li>One-click file association to quickly open files in Fumiko AI from your file browser.</li>
+      <li>One-click file association to quickly open files in BrightPal AI from your file browser.</li>
     </ul>
-    <p>Fumiko AI also includes custom CSS support for personalized styling, and code syntax highlighting for technical books. The application is designed to honor the legacy of deep reading while embracing modern technology for an enhanced experience.</p>
+    <p>BrightPal AI also includes custom CSS support for personalized styling, and code syntax highlighting for technical books. The application is designed to honor the legacy of deep reading while embracing modern technology for an enhanced experience.</p>
   </description>
 
   <categories>
@@ -57,7 +57,7 @@
   <url type="help">https://github.com/readest/readest/wiki</url>
   <url type="donation">https://github.com/sponsors/readest</url>
 
-  <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
+  <launchable type="desktop-id">com.nishan.brightpal.desktop</launchable>
 
   <releases>
     <release version="0.9.63" date="2025-07-07">
@@ -132,12 +132,12 @@
   <project_license>AGPL-3.0-or-later</project_license>
 
   <developer id="com.readest">
-    <name>Fumiko AI Team</name>
+    <name>BrightPal AI Team</name>
   </developer>
 
   <screenshots>
     <screenshot type="default">
-      <caption>Fumiko AI main interface with annotation</caption>
+      <caption>BrightPal AI main interface with annotation</caption>
       <image type="source">https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/screenshots/annotations.png</image>
     </screenshot>
     <screenshot>

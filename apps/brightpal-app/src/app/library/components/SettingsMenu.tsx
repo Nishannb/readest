@@ -1,0 +1,244 @@
+import clsx from 'clsx';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { MdCheck } from 'react-icons/md';
+import { TbSunMoon } from 'react-icons/tb';
+import { BiMoon, BiSun } from 'react-icons/bi';
+
+import { setAboutDialogVisible } from '@/components/AboutWindow';
+import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
+import { DOWNLOAD_BRIGHTPAL_URL } from '@/services/constants';
+import { useEnv } from '@/context/EnvContext';
+import { useThemeStore } from '@/store/themeStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
+import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
+import MenuItem from '@/components/MenuItem';
+import { usePaymentStore } from '@/store/paymentStore';
+
+interface SettingsMenuProps {
+  setIsDropdownOpen?: (isOpen: boolean) => void;
+}
+
+const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
+  const _ = useTranslation();
+  const router = useRouter();
+  const { envConfig, appService } = useEnv();
+
+  const { themeMode, setThemeMode } = useThemeStore();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
+  const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
+  const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
+  const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
+  const [isAlwaysShowStatusBar, setIsAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
+  const [isScreenWakeLock, setIsScreenWakeLock] = useState(settings.screenWakeLock);
+  const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
+  const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
+    settings.autoImportBooksOnOpen,
+  );
+  const [isTelemetryEnabled, setIsTelemetryEnabled] = useState(settings.telemetryEnabled);
+  const iconSize = useResponsiveSize(16);
+
+  const { nuclearReset } = usePaymentStore();
+
+  const handleNuclearReset = () => {
+    if (confirm('⚠️ NUCLEAR RESET ⚠️\n\nThis will:\n• Clear ALL payment data\n• Clear ALL app data\n• Force restart to onboarding\n\nAre you sure? This cannot be undone!')) {
+      nuclearReset();
+    }
+  };
+
+  const showAboutReadest = () => {
+    setAboutDialogVisible(true);
+    setIsDropdownOpen?.(false);
+  };
+
+  const downloadReadest = () => {
+    window.open(DOWNLOAD_BRIGHTPAL_URL, '_blank');
+    setIsDropdownOpen?.(false);
+  };
+
+
+
+  const cycleThemeMode = () => {
+    const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
+    setThemeMode(nextMode);
+  };
+
+  const handleReloadPage = () => {
+    window.location.reload();
+    setIsDropdownOpen?.(false);
+  };
+
+  const handleFullScreen = () => {
+    tauriHandleToggleFullScreen();
+    setIsDropdownOpen?.(false);
+  };
+
+  const toggleOpenInNewWindow = () => {
+    settings.openBookInNewWindow = !settings.openBookInNewWindow;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsDropdownOpen?.(false);
+  };
+
+  const toggleAlwaysOnTop = () => {
+    settings.alwaysOnTop = !settings.alwaysOnTop;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsAlwaysOnTop(settings.alwaysOnTop);
+    tauriHandleSetAlwaysOnTop(settings.alwaysOnTop);
+    setIsDropdownOpen?.(false);
+  };
+
+  const toggleAlwaysShowStatusBar = () => {
+    settings.alwaysShowStatusBar = !settings.alwaysShowStatusBar;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsAlwaysShowStatusBar(settings.alwaysShowStatusBar);
+    setIsDropdownOpen?.(false);
+  };
+
+
+  const toggleAutoImportBooksOnOpen = () => {
+    settings.autoImportBooksOnOpen = !settings.autoImportBooksOnOpen;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsAutoImportBooksOnOpen(settings.autoImportBooksOnOpen);
+  };
+
+  const toggleAutoCheckUpdates = () => {
+    settings.autoCheckUpdates = !settings.autoCheckUpdates;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsAutoCheckUpdates(settings.autoCheckUpdates);
+  };
+
+  const toggleScreenWakeLock = () => {
+    settings.screenWakeLock = !settings.screenWakeLock;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsScreenWakeLock(settings.screenWakeLock);
+  };
+
+  const toggleOpenLastBooks = () => {
+    settings.openLastBooks = !settings.openLastBooks;
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsOpenLastBooks(settings.openLastBooks);
+  };
+
+  const toggleTelemetry = () => {
+    settings.telemetryEnabled = !settings.telemetryEnabled;
+    if (settings.telemetryEnabled) {
+      optInTelemetry();
+    } else {
+      optOutTelemetry();
+    }
+    setSettings(settings);
+    saveSettings(envConfig, settings);
+    setIsTelemetryEnabled(settings.telemetryEnabled);
+  };
+
+
+
+  const handleUpgrade = () => {
+    // navigateToProfile(router); // This line was removed
+    setIsDropdownOpen?.(false);
+  };
+
+
+
+  return (
+    <div
+      tabIndex={0}
+      className={clsx(
+        'settings-menu dropdown-content no-triangle border-base-100',
+        'z-20 mt-2 max-w-[90vw] shadow-2xl',
+      )}
+    >
+      {/* Authentication no longer required - all features are free */}
+      {isTauriAppPlatform() && !appService?.isMobile && (
+        <MenuItem
+          label={_('Auto Import on File Open')}
+          Icon={isAutoImportBooksOnOpen ? MdCheck : undefined}
+          onClick={toggleAutoImportBooksOnOpen}
+        />
+      )}
+      {isTauriAppPlatform() && (
+        <MenuItem
+          label={_('Open Last Book on Start')}
+          Icon={isOpenLastBooks ? MdCheck : undefined}
+          onClick={toggleOpenLastBooks}
+        />
+      )}
+      {appService?.hasUpdater && (
+        <MenuItem
+          label={_('Check Updates on Start')}
+          Icon={isAutoCheckUpdates ? MdCheck : undefined}
+          onClick={toggleAutoCheckUpdates}
+        />
+      )}
+      <hr className='border-base-200 my-1' />
+      {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
+      {appService?.hasWindow && (
+        <MenuItem
+          label={_('Always on Top')}
+          Icon={isAlwaysOnTop ? MdCheck : undefined}
+          onClick={toggleAlwaysOnTop}
+        />
+      )}
+      {appService?.isMobileApp && (
+        <MenuItem
+          label={_('Always Show Status Bar')}
+          Icon={isAlwaysShowStatusBar ? MdCheck : undefined}
+          onClick={toggleAlwaysShowStatusBar}
+        />
+      )}
+      <MenuItem
+        label={_('Keep Screen Awake')}
+        Icon={isScreenWakeLock ? MdCheck : undefined}
+        onClick={toggleScreenWakeLock}
+      />
+      <MenuItem label={_('Reload Page')} onClick={handleReloadPage} />
+      <MenuItem
+        label={
+          themeMode === 'dark'
+            ? _('Dark Mode')
+            : themeMode === 'light'
+              ? _('Light Mode')
+              : _('Auto Mode')
+        }
+        Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
+        onClick={cycleThemeMode}
+      />
+      <hr className='border-base-200 my-1' />
+      {/* Premium upgrade no longer required - all features are free */}
+      {isWebAppPlatform() && <MenuItem label={_('Download BrightPal')} onClick={downloadReadest} />}
+      <MenuItem label={_('About BrightPal')} onClick={showAboutReadest} />
+      
+      {/* Development Reset Button */}
+      {process.env.NODE_ENV === 'development' && (
+        <>
+          <hr className='border-base-200 my-1' />
+          <MenuItem 
+            label="🧨 NUCLEAR RESET (Dev)" 
+            description="Clear all data and restart onboarding"
+            onClick={handleNuclearReset}
+            buttonClass="text-red-600 hover:text-red-700"
+          />
+        </>
+      )}
+      
+      {/* <MenuItem
+        label={_('Help improve Readest')}
+        description={isTelemetryEnabled ? _('Sharing anonymized statistics') : ''}
+        Icon={isTelemetryEnabled ? MdCheck : undefined}
+        onClick={toggleTelemetry}
+      /> */}
+    </div>
+  );
+};
+
+export default SettingsMenu;

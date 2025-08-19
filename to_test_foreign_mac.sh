@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Path to your built .app or .dmg
-APP_PATH="/Users/nishanbaral/Desktop/devops/readest/target/aarch64-apple-darwin/release/bundle/dmg/Fumiko_AI_0.9.71_aarch64.dmg"
+APP_PATH="/Users/nishanbaral/Desktop/devops/readest/target/aarch64-apple-darwin/release/bundle/dmg/BrightPal_AI_0.9.71_aarch64.dmg"
 
 echo "=== Simulating foreign Mac Gatekeeper check ==="
 

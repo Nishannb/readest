@@ -27,8 +27,8 @@ jobs:
         working-directory: apps/readest-app/src-tauri
         run: cargo fmt --check
       - name: Clippy Check
-        working-directory: apps/readest-app/src-tauri
-        run: cargo clippy -p Readest --no-deps -- -D warnings
+        working-directory: apps/brightpal-app/src-tauri
+        run: cargo clippy -p BrightPal --no-deps -- -D warnings
 
   build_web_app:
     runs-on: ubuntu-latest
@@ -56,28 +56,28 @@ jobs:
       - name: cache Next.js build
         uses: actions/cache@v4
         with:
-          path: apps/readest-app/.next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('apps/readest-app/package.json', 'pnpm-lock.yaml') }}
+          path: apps/brightpal-app/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('apps/brightpal-app/package.json', 'pnpm-lock.yaml') }}
           restore-keys: nextjs-${{ runner.os }}-
 
       - name: install Dependencies
-        working-directory: apps/readest-app
+        working-directory: apps/brightpal-app
         run: |
           pnpm install && pnpm setup-pdfjs
 
       - name: run tests
-        working-directory: apps/readest-app
+        working-directory: apps/brightpal-app
         run: |
           pnpm test -- --watch=false
 
       - name: build the web App
         if: matrix.config.platform == 'web'
-        working-directory: apps/readest-app
+        working-directory: apps/brightpal-app
         run: |
           pnpm build-web && pnpm check:all
 
       - name: build the Tauri App
         if: matrix.config.platform == 'tauri'
-        working-directory: apps/readest-app
+        working-directory: apps/brightpal-app
         run: |
           pnpm build && pnpm check:all

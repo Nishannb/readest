@@ -21,7 +21,7 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v4
       - name: get version
-        run: echo "PACKAGE_VERSION=$(node -p "require('./apps/readest-app/package.json').version")" >> $GITHUB_ENV
+        run: echo "PACKAGE_VERSION=$(node -p "require('./apps/brightpal-app/package.json').version")" >> $GITHUB_ENV
       - name: get release
         id: get-release
         uses: actions/github-script@v7
@@ -39,8 +39,8 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const version = require('./apps/readest-app/package.json').version;
-            const releaseNotesFileContent = fs.readFileSync('./apps/readest-app/release-notes.json', 'utf8');
+            const version = require('./apps/brightpal-app/package.json').version;
+            const releaseNotesFileContent = fs.readFileSync('./apps/brightpal-app/release-notes.json', 'utf8');
             const releaseNotes = JSON.parse(releaseNotesFileContent).releases[version] || {};
             const notes = releaseNotes.notes || [];
             const releaseNote = notes.map((note, index) => `${index + 1}. ${note}`).join(' ');
@@ -126,7 +126,7 @@ jobs:
         run: pnpm install
 
       - name: copy pdfjs-dist to public directory
-        run: pnpm --filter @readest/readest-app setup-pdfjs
+        run: pnpm --filter @brightpal/brightpal-app setup-pdfjs
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -161,7 +161,7 @@ jobs:
           echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" >> .env.local
-          cp .env.local apps/readest-app/.env.local
+          cp .env.local apps/brightpal-app/.env.local
 
       - name: build and upload Android apks
         if: matrix.config.release == 'android'
@@ -171,10 +171,10 @@ jobs:
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
-          cd apps/readest-app/
+          cd apps/brightpal-app/
           rm -rf src-tauri/gen/android
           pnpm tauri android init
-          pnpm tauri icon ../../data/icons/readest-book.png
+          pnpm tauri icon ../../data/icons/brightpal-book.png
           git checkout .
 
           MANIFEST="src-tauri/gen/android/app/src/main/AndroidManifest.xml"
@@ -191,8 +191,8 @@ jobs:
           popd
           version=${{ needs.get-release.outputs.release_version }}
           apk_path=src-tauri/gen/android/app/build/outputs/apk/universal/release
-          universial_apk=Readest_${version}_universal.apk
-          arm64_apk=Readest_${version}_arm64.apk
+          universial_apk=BrightPal_${version}_universal.apk
+          arm64_apk=BrightPal_${version}_arm64.apk
           pnpm tauri android build
           cp ${apk_path}/app-universal-release.apk $universial_apk
           pnpm tauri android build -t aarch64
@@ -217,11 +217,11 @@ jobs:
           curl -sL https://github.com/readest/readest/releases/latest/download/latest.json -o latest.json
 
           version=${{ needs.get-release.outputs.release_version }}
-          universial_apk_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_universal.apk"
-          arm64_apk_url="https://github.com/readest/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/Readest_${version}_arm64.apk"
+          universial_apk_url="https://github.com/Nishannb/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/BrightPal_${version}_universal.apk"
+          arm64_apk_url="https://github.com/Nishannb/readest/releases/download/${{ needs.get-release.outputs.release_tag }}/BrightPal_${version}_arm64.apk"
 
-          universial_sig=$(cat Readest_${version}_universal.apk.sig)
-          arm64_sig=$(cat Readest_${version}_arm64.apk.sig)
+          universial_sig=$(cat BrightPal_${version}_universal.apk.sig)
+          arm64_sig=$(cat BrightPal_${version}_arm64.apk.sig)
 
           jq --arg url "$universial_apk_url" \
               --arg sig "$universial_sig" \
@@ -248,7 +248,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           NODE_OPTIONS: '--max-old-space-size=8192'
         with:
-          projectPath: apps/readest-app
+          projectPath: apps/brightpal-app
           releaseId: ${{ needs.get-release.outputs.release_id }}
           releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.args || '' }}
@@ -258,7 +258,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Uploading release notes to GitHub release"
-          gh release upload ${{ needs.get-release.outputs.release_tag }} apps/readest-app/release-notes.json --clobber
+          gh release upload ${{ needs.get-release.outputs.release_tag }} apps/brightpal-app/release-notes.json --clobber
 
       - name: upload portable binaries (Windows only)
         if: matrix.config.os == 'windows-latest'

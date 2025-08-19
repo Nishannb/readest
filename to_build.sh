@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Build helper for Readest desktop app (Tauri)
+# Build helper for BrightPal desktop app (Tauri)
 # Usage:
 #   ./to_build.sh mac         # build macOS Universal DMG (on macOS)
 #   ./to_build.sh mac-arm     # build macOS ARM64 DMG only (on macOS/Apple Silicon)
@@ -11,7 +11,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR"
-APP_DIR="$ROOT_DIR/apps/readest-app"
+APP_DIR="$ROOT_DIR/apps/brightpal-app"
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
