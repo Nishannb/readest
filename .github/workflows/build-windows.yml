@@ -102,9 +102,20 @@ jobs:
           echo Building Windows app from: %CD%
           pnpm build-win-x64
           
+      - name: Show build artifacts
+        shell: cmd
+        run: |
+          echo === Build Artifacts Created ===
+          echo.
+          echo Checking target directory:
+          dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle
+          echo.
+          echo Checking NSIS installer:
+          dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis
+          
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: readest-windows-x64
-          path: apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/
+          name: brightpal-windows-x64
+          path: apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
           retention-days: 30
