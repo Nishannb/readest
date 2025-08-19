@@ -225,7 +225,9 @@ export class View extends HTMLElement {
         super()
         this.history.addEventListener('popstate', ({ detail }) => {
             const resolved = this.resolveNavigation(detail.state)
-            this.renderer.goTo(resolved)
+            if (resolved) {
+                this.renderer.goTo(resolved)
+            }
         })
     }
     async open(book) {
@@ -271,15 +273,19 @@ export class View extends HTMLElement {
             let lastActive
             this.mediaOverlay.addEventListener('highlight', e => {
                 const resolved = this.resolveNavigation(e.detail.text)
+                if (!resolved) return
                 this.renderer.goTo(resolved)
                     .then(() => {
                         const { doc } = this.renderer.getContents()
-                            .find(x => x.index = resolved.index)
+                            .find(x => x.index === resolved.index)
+                        if (!doc) return
                         const el = resolved.anchor(doc)
-                        el.classList.add(activeClass)
-                        if (playbackActiveClass) el.ownerDocument
-                            .documentElement.classList.add(playbackActiveClass)
-                        lastActive = new WeakRef(el)
+                        if (el) {
+                            el.classList.add(activeClass)
+                            if (playbackActiveClass) el.ownerDocument
+                                .documentElement.classList.add(playbackActiveClass)
+                            lastActive = new WeakRef(el)
+                        }
                     })
             })
             this.mediaOverlay.addEventListener('unhighlight', () => {
@@ -499,10 +505,15 @@ export class View extends HTMLElement {
             return this.book.resolveHref(target)
         } catch (e) {
             try { window.dispatchEvent(new CustomEvent('foliate-go-to-failed', { detail: { stage: 'resolve', target, error: e } })) } catch {}
+            return null
         }
     }
     async goTo(target) {
         const resolved = this.resolveNavigation(target)
+        if (!resolved) {
+            try { window.dispatchEvent(new CustomEvent('foliate-go-to-failed', { detail: { stage: 'goto', target, error: 'Navigation target could not be resolved' } })) } catch {}
+            return null
+        }
         try {
             await this.renderer.goTo(resolved)
             this.history.pushState(target)
@@ -512,13 +523,25 @@ export class View extends HTMLElement {
         }
     }
     async goToFraction(frac) {
-        const [index, anchor] = this.#sectionProgress.getSection(frac)
-        await this.renderer.goTo({ index, anchor })
-        this.history.pushState({ fraction: frac })
+        try {
+            const [index, anchor] = this.#sectionProgress.getSection(frac)
+            if (index === undefined || !anchor) {
+                console.warn(`Could not resolve fraction: ${frac}`)
+                return
+            }
+            await this.renderer.goTo({ index, anchor })
+            this.history.pushState({ fraction: frac })
+        } catch (e) {
+            console.error(`Error going to fraction ${frac}:`, e)
+        }
     }
     async select(target) {
         try {
             const obj = await this.resolveNavigation(target)
+            if (!obj) {
+                try { window.dispatchEvent(new CustomEvent('foliate-go-to-failed', { detail: { stage: 'select', target, error: 'Navigation target could not be resolved' } })) } catch {}
+                return
+            }
             await this.renderer.goTo({ ...obj, select: true })
             this.history.pushState(target)
         } catch(e) {
@@ -540,7 +563,12 @@ export class View extends HTMLElement {
     }
     async getTOCItemOf(target) {
         try {
-            const { index, anchor } = await this.resolveNavigation(target)
+            const resolved = await this.resolveNavigation(target)
+            if (!resolved) {
+                console.error(`Could not resolve navigation target: ${target}`)
+                return null
+            }
+            const { index, anchor } = resolved
             const doc = await this.book.sections[index].createDocument()
             const frag = anchor(doc)
             const isRange = frag instanceof Range

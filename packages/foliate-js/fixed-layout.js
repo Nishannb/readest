@@ -294,6 +294,7 @@ export class FixedLayout extends HTMLElement {
     async goTo(target) {
         const { book } = this
         const resolved = await target
+        if (!resolved) return
         const section = book.sections[resolved.index]
         if (!section) return
         const { index, side } = this.getSpreadOf(section)
