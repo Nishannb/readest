@@ -56,9 +56,24 @@ jobs:
       shell: cmd
       run: |
         echo Current working directory: %CD%
+        echo === Before Installation ===
+        echo Workspace config:
+        type pnpm-workspace.yaml
+        echo.
+        echo Packages directory:
+        dir packages
+        echo.
+        echo Installing foliate-js package first...
+        cd packages\foliate-js
+        pnpm install
+        cd ..\..
         echo Installing workspace dependencies from root...
         pnpm install
         echo Dependencies installed successfully
+        echo.
+        echo === After Installation ===
+        echo Installed packages:
+        pnpm list --depth=0
         
     - name: Verify workspace setup
       shell: cmd

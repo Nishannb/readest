@@ -2,6 +2,10 @@
   "name": "@readest/monorepo",
   "private": true,
   "repository": "readest/readest",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tauri": "pnpm --filter @brightpal/brightpal-app tauri",
