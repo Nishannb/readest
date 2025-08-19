@@ -1,5 +1,4 @@
 name: Build Windows x64
-
 on:
   workflow_dispatch:
   push:
@@ -11,103 +10,98 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        
-    - name: Setup Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: x86_64-pc-windows-msvc
-        override: true
-        
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-        
-    - name: Install pnpm globally
-      run: npm install -g pnpm
-        
-    - name: Show directory structure
-      shell: cmd
-      run: |
-        echo === Root Directory Structure ===
-        dir
-        echo Current directory: %CD%
-        echo.
-        echo === Workspace Configuration ===
-        type pnpm-workspace.yaml
-        echo.
-        echo === Package.json Dependencies ===
-        findstr "@readest/foliate-js" apps\brightpal-app\package.json
-        echo.
-        echo === Packages Directory ===
-        dir packages
-        
-    - name: Install dependencies
-      shell: cmd
-      run: |
-        echo Current working directory: %CD%
-        echo === Before Installation ===
-        echo Workspace config:
-        type pnpm-workspace.yaml
-        echo.
-        echo Packages directory:
-        dir packages
-        echo.
-        echo Installing foliate-js package first...
-        cd packages\foliate-js
-        pnpm install
-        cd ..\..
-        echo Installing workspace dependencies from root...
-        pnpm install
-        echo Dependencies installed successfully
-        echo.
-        echo === After Installation ===
-        echo Installed packages:
-        pnpm list --depth=0
-        
-    - name: Verify workspace setup
-      shell: cmd
-      run: |
-        echo === Verifying Workspace Setup ===
-        pnpm list --depth=0
-        echo.
-        echo === Checking @readest/foliate-js package ===
-        pnpm list @readest/foliate-js
-        echo.
-        echo === Workspace packages ===
-        pnpm list --filter=@brightpal/brightpal-app
-        
-    - name: Build frontend
-      shell: cmd
-      run: |
-        cd apps\brightpal-app
-        echo Building frontend from: %CD%
-        pnpm build
-        
-    - name: Build Windows x64 app
-      shell: cmd
-      run: |
-        cd apps\brightpal-app
-        echo Building Windows app from: %CD%
-        pnpm build-win-x64
-        
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: readest-windows-x64
-        path: apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/
-        retention-days: 30
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Removed: submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+          override: true
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install pnpm globally
+        run: npm install -g pnpm
+
+      - name: Show directory structure
+        shell: cmd
+        run: |
+          echo === Root Directory Structure ===
+          dir
+          echo Current directory: %CD%
+          echo.
+          echo === Workspace Configuration ===
+          type pnpm-workspace.yaml
+          echo.
+          echo === Package.json Dependencies ===
+          findstr "@readest/foliate-js" apps\brightpal-app\package.json
+          echo.
+          echo === Packages Directory ===
+          dir packages
+
+      - name: Install dependencies
+        shell: cmd
+        run: |
+          echo Current working directory: %CD%
+          echo === Before Installation ===
+          echo Workspace config:
+          type pnpm-workspace.yaml
+          echo.
+          echo Packages directory:
+          dir packages
+          echo.
+          echo Installing workspace dependencies from root...
+          pnpm install
+          echo Dependencies installed successfully
+          echo.
+          echo === After Installation ===
+          echo Installed packages:
+          pnpm list --depth=0
+
+      - name: Verify workspace setup
+        shell: cmd
+        run: |
+          echo === Verifying Workspace Setup ===
+          pnpm list --depth=0
+          echo.
+          echo === Checking @readest/foliate-js package ===
+          pnpm list @readest/foliate-js
+          echo.
+          echo === Workspace packages ===
+          pnpm list --filter=@brightpal/brightpal-app
+
+      - name: Build frontend
+        shell: cmd
+        run: |
+          cd apps\brightpal-app
+          echo Building frontend from: %CD%
+          pnpm build
+
+      - name: Build Windows x64 app
+        shell: cmd
+        run: |
+          cd apps\brightpal-app
+          echo Building Windows app from: %CD%
+          pnpm build-win-x64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: readest-windows-x64
+          path: apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/
+          retention-days: 30
