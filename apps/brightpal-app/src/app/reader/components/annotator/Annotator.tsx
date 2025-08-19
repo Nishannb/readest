@@ -9,8 +9,8 @@ import { BsTranslate } from 'react-icons/bs';
 import { TbHexagonLetterD } from 'react-icons/tb';
 
 
-import * as CFI from '@readest/foliate-js/epubcfi.js';
-import { Overlayer } from '@readest/foliate-js/overlayer.js';
+import * as CFI from 'foliate-js/epubcfi.js';
+import { Overlayer } from 'foliate-js/overlayer.js';
 import { useEnv } from '@/context/EnvContext';
 import { BookNote, BooknoteGroup, HighlightColor, HighlightStyle } from '@/types/book';
 import { getOSPlatform, uniqueId } from '@/utils/misc';

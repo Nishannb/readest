@@ -47,7 +47,7 @@ import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
-import { Overlayer } from '@readest/foliate-js/overlayer.js';
+import { Overlayer } from 'foliate-js/overlayer.js';
 import { getViewInsets } from '@/utils/insets';
 
 // import { writeFile, BaseDirectory } from '@tauri-apps/plugin-fs';
@@ -1024,7 +1024,7 @@ const FoliateViewer: React.FC<{
 
     const openBook = async () => {
       console.log('Opening book', bookKey);
-              await import('@readest/foliate-js/view.js');
+              await import('foliate-js/view.js');
       const view = wrappedFoliateView(document.createElement('foliate-view') as FoliateView);
       view.id = `foliate-view-${bookKey}`;
       document.body.append(view);

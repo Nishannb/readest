@@ -4,7 +4,7 @@
  */
 
 import { BookDoc } from '@/libs/document';
-import { parse, fake, collapse, fromRange, toRange, toElement } from '@readest/foliate-js/epubcfi.js';
+import { parse, fake, collapse, fromRange, toRange, toElement } from 'foliate-js/epubcfi.js';
 
 type XPointer = {
   xpointer: string;

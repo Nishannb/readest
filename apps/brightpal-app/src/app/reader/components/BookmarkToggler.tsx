@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MdOutlineBookmarkAdd, MdOutlineBookmark } from 'react-icons/md';
-import * as CFI from '@readest/foliate-js/epubcfi.js';
+import * as CFI from 'foliate-js/epubcfi.js';
 
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
