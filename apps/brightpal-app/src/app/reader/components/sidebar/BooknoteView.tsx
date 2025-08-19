@@ -1,6 +1,6 @@
 import React from 'react';
 
-import * as CFI from '@readest/foliate-js/epubcfi.js';
+import * as CFI from 'foliate-js/epubcfi.js';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { findTocItemBS } from '@/utils/toc';
 import { TOCItem } from '@/libs/document';
