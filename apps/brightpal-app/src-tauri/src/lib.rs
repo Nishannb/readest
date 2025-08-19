@@ -150,6 +150,7 @@ pub fn run() {
             macos::apple_auth::start_apple_sign_in,
             #[cfg(target_os = "macos")]
             macos::traffic_light::set_traffic_lights,
+            #[cfg(target_os = "macos")]
             macos::screenshot::capture_screen_interactive,
         ])
         .plugin(tauri_plugin_shell::init())
