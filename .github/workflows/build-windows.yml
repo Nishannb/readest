@@ -10,6 +10,9 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,27 +20,27 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
           # Removed: submodules: recursive
-
+          
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
+          
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           target: x86_64-pc-windows-msvc
           override: true
-
+          
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
-
+          
       - name: Install pnpm globally
         run: npm install -g pnpm
-
+        
       - name: Show directory structure
         shell: cmd
         run: |
@@ -53,7 +56,7 @@ jobs:
           echo.
           echo === Packages Directory ===
           dir packages
-
+          
       - name: Install dependencies
         shell: cmd
         run: |
@@ -72,7 +75,7 @@ jobs:
           echo === After Installation ===
           echo Installed packages:
           pnpm list --depth=0
-
+          
       - name: Verify workspace setup
         shell: cmd
         run: |
@@ -84,22 +87,21 @@ jobs:
           echo.
           echo === Workspace packages ===
           pnpm list --filter=@brightpal/brightpal-app
-
+          
       - name: Build frontend
-        shell: powershell
+        shell: cmd
         run: |
           cd apps\brightpal-app
-          echo "Building frontend from: $PWD"
-          $env:NODE_OPTIONS = "--max-old-space-size=8192"
+          echo Building frontend from: %CD%
           pnpm build
-
+          
       - name: Build Windows x64 app
         shell: cmd
         run: |
           cd apps\brightpal-app
           echo Building Windows app from: %CD%
           pnpm build-win-x64
-
+          
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
