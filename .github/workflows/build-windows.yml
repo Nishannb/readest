@@ -49,7 +49,7 @@ jobs:
           type pnpm-workspace.yaml
           echo.
           echo === Package.json Dependencies ===
-          findstr "@readest/foliate-js" apps\brightpal-app\package.json
+          findstr "foliate-js" apps\brightpal-app\package.json
           echo.
           echo === Packages Directory ===
           dir packages
@@ -79,8 +79,8 @@ jobs:
           echo === Verifying Workspace Setup ===
           pnpm list --depth=0
           echo.
-          echo === Checking @readest/foliate-js package ===
-          pnpm list @readest/foliate-js
+          echo === Checking foliate-js package ===
+          pnpm list foliate-js
           echo.
           echo === Workspace packages ===
           pnpm list --filter=@brightpal/brightpal-app
