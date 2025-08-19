@@ -86,11 +86,12 @@ jobs:
           pnpm list --filter=@brightpal/brightpal-app
 
       - name: Build frontend
-        shell: cmd
-        run: |
-          cd apps\brightpal-app
-          echo Building frontend from: %CD%
-          pnpm build
+         shell: cmd
+         run: |
+           cd apps\brightpal-app
+           echo Building frontend from: %CD%
+           set NODE_OPTIONS=--max-old-space-size=8192
+           pnpm build
 
       - name: Build Windows x64 app
         shell: cmd
