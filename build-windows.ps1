@@ -52,3 +52,6 @@ cargo tauri build --target x86_64-pc-windows-msvc
 Write-Host "Build completed!" -ForegroundColor Green
 Write-Host "Check the target\x86_64-pc-windows-msvc\release\ directory for the output files." -ForegroundColor Green
 Read-Host "Press Enter to exit"
+
+
+

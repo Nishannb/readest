@@ -62,10 +62,8 @@ export const navigateToReader = (
 };
 
 export const navigateToLogin = (router: ReturnType<typeof useRouter>) => {
-  const pathname = window.location.pathname;
-  const search = window.location.search;
-  const currentPath = pathname !== '/auth' ? pathname + search : '/';
-  router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+  // Authentication no longer required - redirect to library instead
+  router.push('/library');
 };
 
 export const navigateToProfile = (router: ReturnType<typeof useRouter>) => {

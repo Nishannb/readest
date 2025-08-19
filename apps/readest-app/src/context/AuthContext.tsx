@@ -1,94 +1,41 @@
 'use client';
 
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '@/utils/supabase';
-import posthog from 'posthog-js';
+import React, { createContext, useState, useContext, ReactNode } from 'react';
+
+type LocalUser = {
+  id: string;
+  email: string;
+  full_name?: string | null;
+  avatar_url?: string | null;
+};
 
 interface AuthContextType {
   token: string | null;
-  user: User | null;
-  login: (token: string, user: User) => void;
+  user: LocalUser | null;
+  login: (token: string, user: LocalUser) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('token');
-    }
-    return null;
-  });
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      const userJson = localStorage.getItem('user');
-      return userJson ? JSON.parse(userJson) : null;
-    }
-    return null;
+  // Authentication no longer required - provide fake authenticated user
+  const [token, setToken] = useState<string | null>('local-token');
+  const [user, setUser] = useState<LocalUser | null>({
+    id: 'local-user-id',
+    email: 'user@readest.local',
+    full_name: 'Local User',
+    avatar_url: null,
   });
 
-  useEffect(() => {
-    const syncSession = (
-      session: { access_token: string; refresh_token: string; user: User } | null,
-    ) => {
-      if (session) {
-        console.log('Syncing session');
-        const { access_token, refresh_token, user } = session;
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('refresh_token', refresh_token);
-        localStorage.setItem('user', JSON.stringify(user));
-        posthog.identify(user.id);
-        setToken(access_token);
-        setUser(user);
-      } else {
-        console.log('Clearing session');
-        localStorage.removeItem('token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
-        setToken(null);
-        setUser(null);
-      }
-    };
-    const refreshSession = async () => {
-      try {
-        await supabase.auth.refreshSession();
-      } catch {
-        syncSession(null);
-      }
-    };
+  // No authentication logic needed - all users are automatically authenticated
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
-      syncSession(session);
-    });
-
-    refreshSession();
-    return () => {
-      subscription?.subscription.unsubscribe();
-    };
-  }, []);
-
-  const login = (newToken: string, newUser: User) => {
-    console.log('Logging in');
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(newUser));
+  const login = (newToken: string, newUser: LocalUser) => {
+    // No-op - authentication not required
   };
 
   const logout = async () => {
-    console.log('Logging out');
-    try {
-      await supabase.auth.refreshSession();
-    } catch {
-    } finally {
-      await supabase.auth.signOut();
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
-    }
+    // No-op - authentication not required
   };
 
   return (

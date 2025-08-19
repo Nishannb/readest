@@ -51,7 +51,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
       >
         <div
           className={clsx(
-            'selection-buttons flex items-center justify-between p-2',
+            'selection-buttons flex items-center justify-center gap-3 p-2',
             isVertical ? 'flex-col' : 'flex-row',
           )}
           style={{

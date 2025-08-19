@@ -79,3 +79,6 @@ After a successful build, you'll find:
 - `readest.exe` - The main Windows executable
 - Various DLL files and resources
 - The app will be ready to run on Windows x64 systems
+
+
+

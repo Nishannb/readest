@@ -80,7 +80,7 @@ const SidebarContent: React.FC<{
           appService?.hasSafeAreaInset && 'pb-[calc(env(safe-area-inset-bottom)/2)]',
         )}
       >
-        <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+        <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} bookKey={sideBarBookKey} />
       </div>
     </>
   );

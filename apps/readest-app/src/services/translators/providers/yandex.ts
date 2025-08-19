@@ -50,6 +50,7 @@ export const yandexProvider: TranslationProvider = {
   name: 'yandex',
   label: _('Yandex Translate'),
   authRequired: false,
+  quotaExceeded: false,
   translate: async (texts: string[], sourceLang: string, targetLang: string): Promise<string[]> => {
     if (!texts.length) return [];
 

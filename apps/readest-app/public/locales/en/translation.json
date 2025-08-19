@@ -9,8 +9,14 @@
   "Search in {{count}} Book(s)..._one": "Search in {{count}} book...",
   "Search in {{count}} Book(s)..._other": "Search in {{count}} books...",
   "{{count}} pages left in chapter_one": "{{count}} page left in chapter",
-  "{{count}} pages left in chapter_other": "{{count}} pages left in chapter"
-,
+  "{{count}} pages left in chapter_other": "{{count}} pages left in chapter",
+  "Create Note": "Create Note",
+  "Highlighted Text": "Highlighted Text",
+  "Page {{page}}": "Page {{page}}",
+  "Enter your note here...": "Enter your note here...",
+  "Cancel": "Cancel",
+  "Please enter note content": "Please enter note content",
+  "Failed to create note. Please try again.": "Failed to create note. Please try again."
   "About Readest": "About Fumiko AI",
   "Download Readest": "Download Fumiko AI",
   "Help improve Readest": "Help improve Fumiko AI",

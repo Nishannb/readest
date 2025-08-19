@@ -3,11 +3,9 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getAPIBaseUrl, getNodeAPIBaseUrl } from '@/services/environment';
-import { getAccessToken } from '@/utils/access';
-import { supabase } from '@/utils/supabase';
 import Spinner from '@/components/Spinner';
 
-const STRIPE_CHECK_URL = `${getAPIBaseUrl()}/stripe/check`;
+const STRIPE_CHECK_URL = '';
 const APPLE_IAP_VERIFY_URL = `${getNodeAPIBaseUrl()}/apple/iap-verify`;
 
 interface SessionStatus {
@@ -39,7 +37,7 @@ const SuccessPageWithSearchParams = () => {
 
   const updateStripeSessionStatus = async () => {
     try {
-      const token = await getAccessToken();
+      const token = '';
       const response = await fetch(STRIPE_CHECK_URL, {
         method: 'POST',
         headers: {
@@ -73,7 +71,7 @@ const SuccessPageWithSearchParams = () => {
       });
 
       try {
-        await supabase.auth.refreshSession();
+        // no-op
       } catch {}
     } catch (error) {
       console.error('Failed to fetch session status:', error);
@@ -92,7 +90,7 @@ const SuccessPageWithSearchParams = () => {
     }
     if (platform === 'ios') {
       try {
-        const token = await getAccessToken();
+        const token = '';
         const response = await fetch(APPLE_IAP_VERIFY_URL, {
           method: 'POST',
           headers: {
@@ -125,7 +123,7 @@ const SuccessPageWithSearchParams = () => {
         });
 
         try {
-          await supabase.auth.refreshSession();
+          // no-op
         } catch {}
       } catch (error) {
         console.error('Failed to verify IAP transaction:', error);

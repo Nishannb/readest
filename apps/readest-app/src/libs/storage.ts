@@ -1,5 +1,4 @@
 import { getAPIBaseUrl, isWebAppPlatform } from '@/services/environment';
-import { getUserID } from '@/utils/access';
 import { fetchWithAuth } from '@/utils/fetch';
 import {
   tauriUpload,
@@ -75,12 +74,10 @@ export const downloadFile = async (
   onProgress?: ProgressHandler,
 ) => {
   try {
-    const userId = await getUserID();
-    if (!userId) {
-      throw new Error('Not authenticated');
-    }
+    // Local-only app: use fixed user ID
+    const userIdForStorage = 'local-user-id';
 
-    const fileKey = `${userId}/${filePath}`;
+    const fileKey = `${userIdForStorage}/${filePath}`;
     const response = await fetchWithAuth(
       `${API_ENDPOINTS.download}?fileKey=${encodeURIComponent(fileKey)}`,
       {
@@ -104,12 +101,10 @@ export const downloadFile = async (
 
 export const deleteFile = async (filePath: string) => {
   try {
-    const userId = await getUserID();
-    if (!userId) {
-      throw new Error('Not authenticated');
-    }
+    // Local-only app: use fixed user ID
+    const userIdForStorage = 'local-user-id';
 
-    const fileKey = `${userId}/${filePath}`;
+    const fileKey = `${userIdForStorage}/${filePath}`;
     await fetchWithAuth(`${API_ENDPOINTS.delete}?fileKey=${encodeURIComponent(fileKey)}`, {
       method: 'DELETE',
     });

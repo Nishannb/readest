@@ -7,6 +7,8 @@ import { TranslationProvider } from '../types';
 export const googleProvider: TranslationProvider = {
   name: 'google',
   label: _('Google Translate'),
+  authRequired: false,
+  quotaExceeded: false,
   translate: async (text: string[], sourceLang: string, targetLang: string): Promise<string[]> => {
     if (!text.length) return [];
 

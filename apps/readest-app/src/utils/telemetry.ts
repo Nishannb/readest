@@ -1,22 +1,25 @@
-import posthog from 'posthog-js';
-
 export const TELEMETRY_OPT_OUT_KEY = 'readest-telemetry-opt-out';
 
 export const hasOptedOutTelemetry = () => {
-  return localStorage.getItem(TELEMETRY_OPT_OUT_KEY) === 'true';
-};
-
-export const captureEvent = (event: string, properties?: Record<string, unknown>) => {
-  if (!hasOptedOutTelemetry()) {
-    posthog.capture(event, properties);
+  try {
+    return localStorage.getItem(TELEMETRY_OPT_OUT_KEY) === 'true';
+  } catch {
+    return true;
   }
 };
 
+// Telemetry removed – stubbed no-op functions
+export const captureEvent = (_event: string, _properties?: Record<string, unknown>) => {
+  // no-op
+};
+
 export const optInTelemetry = () => {
-  localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'false');
-  posthog.opt_in_capturing();
+  try {
+    localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'false');
+  } catch {}
 };
 export const optOutTelemetry = () => {
-  localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'true');
-  posthog.opt_out_capturing();
+  try {
+    localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'true');
+  } catch {}
 };

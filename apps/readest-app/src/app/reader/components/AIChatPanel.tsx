@@ -1,18 +1,28 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
+import { shallow } from 'zustand/shallow';
 import clsx from 'clsx';
-import { useAIChatStore } from '@/store/aiChatStore';
+import { useAIChatStore, type AIChatMessage, type AIChatThread } from '@/store/aiChatStore';
+import { useBookDataStore } from '@/store/bookDataStore';
+import { useReaderStore } from '@/store/readerStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useEnv } from '@/context/EnvContext';
+import { uniqueId } from '@/utils/misc';
 import { FiSend, FiX, FiSettings, FiPlus, FiRefreshCw } from 'react-icons/fi';
 import Button from '@/components/Button';
 import { useAIProviderStore, ProviderName } from '@/store/aiProviderStore';
+import { detectLookoutCommand } from '../utils/lookoutCommandDetection';
+import { detectNotesCommand } from '../utils/notesCommandDetection';
+import { PerformanceOptimizationService } from '../services/performanceOptimizationService';
+import LookoutAgentLazy from './LookoutAgentLazy';
 
-const panelWidthPx = 448; // 28rem
+
 const InputRow: React.FC<{ bookKey: string; value: string; onChange: (v: string)=>void; onSend: ()=>void }> = ({ bookKey, value, onChange, onSend }) => {
   return (
     <div className='mb-0 flex items-end gap-2 border border-base-300 bg-base-200/20 px-3 py-2 shadow-sm w-full'>
       <textarea
         className='textarea textarea-bordered flex-1 bg-transparent leading-tight w-full'
         style={{ minHeight: '5.5rem', maxHeight: '8rem' }}
-        placeholder='Ask AI…'
+        placeholder='Ask AI… (use @notes <text> to add to notebook)'
         value={value}
         rows={4}
         onChange={(e) => onChange(e.target.value)}
@@ -24,7 +34,7 @@ const InputRow: React.FC<{ bookKey: string; value: string; onChange: (v: string)
         }}
       />
       <button className='btn btn-neutral btn-sm' onClick={onSend} title='Send'>
-        {useAIChatStore.getState()?.streamingByBookKey?.[bookKey] ? (
+        {useAIChatStore.getState()?.isStreamingByBookKey?.[bookKey] ? (
           <span className='relative inline-block w-4 h-4'>
             <span className='absolute inset-0 rounded-full border-2 border-base-300 border-t-transparent animate-spin' />
           </span>
@@ -37,21 +47,131 @@ const InputRow: React.FC<{ bookKey: string; value: string; onChange: (v: string)
 }
 
 
-// Minimal formatter for chat content supporting:
-// - *text* => italic
-// - **text** => bold
-// - ***text*** => bold + italic
-// - Lines starting with "* " => bullet list items
+// Comprehensive Markdown formatter for chat content supporting:
+// - Tables with proper HTML table rendering (e.g., | Header | Header |\n|--------|--------|\n| Cell | Cell |)
+// - Code blocks with syntax highlighting (e.g., ```javascript\ncode here\n```)
+// - Headings with proper hierarchy (e.g., # H1, ## H2, ### H3)
+// - Lists (bullet: - item or * item, ordered: 1. item, 2. item)
+// - Inline formatting (bold: **text**, italic: *text*, code: `text`)
+// - Think blocks for AI reasoning (<think>content</think>)
+// 
+// Examples:
+// Tables: | Name | Age | City |\n|-------|-----|------|\n| John | 25 | NYC |\n| Jane | 30 | LA |
+// Code: ```python\nprint("Hello World")\n```
+// Headings: # Main Title\n## Subtitle\n### Section
+// Lists: - First item\n- Second item\n1. First\n2. Second
 const ChatFormattedText: React.FC<{ text: string }> = ({ text }) => {
   const [dotCount, setDotCount] = React.useState(0);
+
+  // Parse and render Markdown table
+  const renderTable = (tableText: string, keyPrefix: string) => {
+    const lines = tableText.trim().split('\n');
+    if (lines.length < 2) return null;
+
+    // Parse header
+    const headerLine = lines[0];
+    if (!headerLine) return null;
+    const headers = headerLine.split('|').map(h => h.trim()).filter(Boolean);
+    
+    // Skip separator line (contains dashes)
+    const dataLines = lines.slice(2).filter(line => line.trim() && !line.includes('---'));
+    
+    // Parse data rows
+    const rows = dataLines.map(line => 
+      line.split('|').map(cell => cell.trim()).filter(Boolean)
+    );
+
+    return (
+      <div key={`${keyPrefix}-table`} className="overflow-x-auto my-2">
+        <table className="table table-sm table-bordered w-full">
+          <thead>
+            <tr>
+              {headers.map((header, idx) => (
+                <th key={`${keyPrefix}-header-${idx}`} className="bg-base-200 text-base-content font-semibold px-3 py-2 text-left">
+                  {renderInline(header, `${keyPrefix}-header-${idx}`)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIdx) => (
+              <tr key={`${keyPrefix}-row-${rowIdx}`}>
+                {row.map((cell, cellIdx) => (
+                  <td key={`${keyPrefix}-cell-${rowIdx}-${cellIdx}`} className="px-3 py-2 border-t">
+                    {renderInline(cell, `${keyPrefix}-cell-${rowIdx}-${cellIdx}`)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  // Parse and render code block
+  const renderCodeBlock = (codeText: string, keyPrefix: string) => {
+    const lines = codeText.trim().split('\n');
+    if (lines.length === 0) return null;
+
+    // Extract language from first line if it exists
+    const firstLine = lines[0];
+    if (!firstLine) return null;
+    const languageMatch = firstLine.match(/^```(\w+)?/);
+    const language = languageMatch?.[1] || '';
+    const codeContent = languageMatch ? lines.slice(1, -1).join('\n') : lines.join('\n');
+
+    return (
+      <div key={`${keyPrefix}-code`} className="my-3">
+        {language && (
+          <div className="text-xs text-base-content/60 bg-base-200 px-3 py-1 rounded-t border-b">
+            {language}
+          </div>
+        )}
+        <pre className={`bg-base-300 text-base-content p-3 rounded-b overflow-x-auto ${language ? '' : 'rounded-t'}`}>
+          <code>{codeContent}</code>
+        </pre>
+      </div>
+    );
+  };
+
+  // Parse and render heading
+  const renderHeading = (line: string, keyPrefix: string) => {
+    const match = line.match(/^(#{1,6})\s+(.+)$/);
+    if (!match) return null;
+
+    const level = match[1].length;
+    const content = match[2];
+    if (!content) return null;
+    const Tag = `h${Math.min(level, 6)}` as keyof JSX.IntrinsicElements;
+    
+    const headingClasses = {
+      1: 'text-2xl font-bold my-4',
+      2: 'text-xl font-bold my-3',
+      3: 'text-lg font-bold my-2',
+      4: 'text-base font-semibold my-2',
+      5: 'text-sm font-semibold my-1',
+      6: 'text-xs font-semibold my-1'
+    };
+
+    return (
+      <Tag key={`${keyPrefix}-heading`} className={headingClasses[level as keyof typeof headingClasses]}>
+        {renderInline(content, `${keyPrefix}-heading-content`)}
+      </Tag>
+    );
+  };
+
+  // Parse and render inline formatting
   const renderInline = (s: string, keyPrefix: string) => {
     const parts: React.ReactNode[] = [];
     if (!s) return parts;
 
-    const regex = /(\*\*\*[^*]+?\*\*\*|\*\*[^*]+?\*\*|\*[^*]+?\*)/g;
+    // Enhanced regex to handle more inline formatting
+    const regex = /(\*\*\*[^*]+?\*\*\*|\*\*[^*]+?\*\*|\*[^*]+?\*|`[^`]+?`)/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
     let idx = 0;
+    
     while ((match = regex.exec(s)) !== null) {
       const start = match.index;
       const end = regex.lastIndex;
@@ -71,6 +191,12 @@ const ChatFormattedText: React.FC<{ text: string }> = ({ text }) => {
         parts.push(
           <em key={`${keyPrefix}-i-${idx++}`}>{token.slice(1, -1)}</em>
         );
+      } else if (token.startsWith('`')) {
+        parts.push(
+          <code key={`${keyPrefix}-code-${idx++}`} className="bg-base-200 px-1 py-0.5 rounded text-sm font-mono">
+            {token.slice(1, -1)}
+          </code>
+        );
       }
       lastIndex = end;
     }
@@ -78,6 +204,49 @@ const ChatFormattedText: React.FC<{ text: string }> = ({ text }) => {
       parts.push(<span key={`${keyPrefix}-t-${idx++}`}>{s.slice(lastIndex)}</span>);
     }
     return parts;
+  };
+
+  // Parse and render list
+  const renderList = (lines: string[], startIndex: number, keyPrefix: string) => {
+    const items: { content: string; type: 'bullet' | 'ordered' }[] = [];
+    let i = startIndex;
+    
+    while (i < lines.length) {
+      const line = lines[i];
+      if (!line) break;
+      const bulletMatch = line.match(/^\s*[-*]\s+(.+)$/);
+      const orderedMatch = line.match(/^\s*(\d+)\.\s+(.+)$/);
+      
+      if (bulletMatch) {
+        const content = bulletMatch[1];
+        if (content) items.push({ content, type: 'bullet' });
+        i++;
+      } else if (orderedMatch) {
+        const content = orderedMatch[2];
+        if (content) items.push({ content, type: 'ordered' });
+        i++;
+      } else {
+        break;
+      }
+    }
+
+    if (items.length === 0) return { items: [], nextIndex: startIndex };
+
+    const isOrdered = items[0]?.type === 'ordered';
+    const ListTag = isOrdered ? 'ol' : 'ul';
+    const listClass = isOrdered ? 'list-decimal' : 'list-disc';
+
+    const listElement = (
+      <ListTag key={`${keyPrefix}-list`} className={`${listClass} pl-5 my-2`}>
+        {items.map((item, idx) => (
+          <li key={`${keyPrefix}-item-${idx}`} className="my-1">
+            {renderInline(item.content, `${keyPrefix}-item-${idx}`)}
+          </li>
+        ))}
+      </ListTag>
+    );
+
+    return { items: [listElement], nextIndex: i };
   };
 
   // Stream-friendly split: toggle think styling as soon as <think> appears,
@@ -113,44 +282,101 @@ const ChatFormattedText: React.FC<{ text: string }> = ({ text }) => {
         setDotCount((c) => (c + 1) % 4);
       }, 400);
       return () => clearInterval(id);
+    } else {
+      setDotCount(0);
     }
-    setDotCount(0);
+    return undefined;
   }, [isThinking]);
 
   const blocks: React.ReactNode[] = [];
   let blockIdx = 0;
+  
   for (const seg of segments) {
     if (seg.type === 'think') {
       blocks.push(
-        <div key={`think-${blockIdx++}`} className="whitespace-pre-wrap text-base-content/70 pl-[4.5px]" style={{ fontSize: '0.9em' }}>
+        <div key={`think-${blockIdx++}`} className="whitespace-pre-wrap text-base-content/70 pl-[4.5px] bg-base-200/50 p-2 rounded" style={{ fontSize: '0.9em' }}>
           {seg.content}
         </div>
       );
       continue;
     }
+
     const s = seg.content;
     const lines = s.split('\n');
     let i = 0;
+    
     while (i < lines.length) {
-      const line = lines[i] ?? '';
-      if (/^\s*\*\s+/.test(line)) {
-        const items: string[] = [];
-        while (i < lines.length && /^\s*\*\s+/.test(lines[i] ?? '')) {
-          items.push((lines[i] as string).replace(/^\s*\*\s+/, ''));
-          i++;
-        }
-        blocks.push(
-          <ul key={`ul-${blockIdx++}`} className="list-disc pl-5">
-            {items.map((it, idx) => (
-              <li key={`li-${blockIdx}-${idx}`}>{renderInline(it, `li-${blockIdx}-${idx}`)}</li>
-            ))}
-          </ul>
-        );
+      const line = lines[i];
+      if (!line) {
+        i++;
         continue;
       }
-      blocks.push(
-        <div key={`p-${blockIdx++}`}>{renderInline(line, `p-${blockIdx}`)}</div>
-      );
+      
+      // Check for code blocks
+      if (line.trim().startsWith('```')) {
+        const codeStart = i;
+        let codeEnd = i + 1;
+        while (codeEnd < lines.length && !lines[codeEnd]?.trim().startsWith('```')) {
+          codeEnd++;
+        }
+        if (codeEnd < lines.length) {
+          const codeBlock = lines.slice(codeStart, codeEnd + 1).join('\n');
+          const codeElement = renderCodeBlock(codeBlock, `code-${blockIdx}`);
+          if (codeElement) blocks.push(codeElement);
+          i = codeEnd + 1;
+          blockIdx++;
+          continue;
+        }
+      }
+      
+      // Check for tables
+      if (line.includes('|') && i + 1 < lines.length && lines[i + 1]?.includes('---')) {
+        const tableStart = i;
+        let tableEnd = i + 1;
+        while (tableEnd < lines.length && (lines[tableEnd]?.includes('|') || lines[tableEnd]?.includes('---'))) {
+          tableEnd++;
+        }
+        const tableBlock = lines.slice(tableStart, tableEnd).join('\n');
+        const tableElement = renderTable(tableBlock, `table-${blockIdx}`);
+        if (tableElement) blocks.push(tableElement);
+        i = tableEnd;
+        blockIdx++;
+        continue;
+      }
+      
+      // Check for headings
+      if (line.match(/^#{1,6}\s+/)) {
+        const headingElement = renderHeading(line, `heading-${blockIdx}`);
+        if (headingElement) {
+          blocks.push(headingElement);
+          i++;
+          blockIdx++;
+          continue;
+        }
+      }
+      
+      // Check for lists
+      if (line.match(/^\s*[-*]\s+/) || line.match(/^\s*\d+\.\s+/)) {
+        const { items, nextIndex } = renderList(lines, i, `list-${blockIdx}`);
+        if (items.length > 0) {
+          blocks.push(...items);
+          i = nextIndex;
+          blockIdx++;
+          continue;
+        }
+      }
+      
+      // Regular text line
+      if (line.trim()) {
+        blocks.push(
+          <div key={`p-${blockIdx++}`} className="my-1">
+            {renderInline(line, `p-${blockIdx}`)}
+          </div>
+        );
+      } else {
+        // Empty line for spacing
+        blocks.push(<div key={`spacer-${blockIdx++}`} className="h-2" />);
+      }
       i++;
     }
   }
@@ -158,7 +384,7 @@ const ChatFormattedText: React.FC<{ text: string }> = ({ text }) => {
   return (
     <div className="space-y-1">
       {isThinking && (
-        <div className="text-base-content/70 pl-[4.5px]" style={{ fontSize: '0.9em' }}>
+        <div className="text-base-content/70 pl-[4.5px] bg-base-200/50 p-2 rounded" style={{ fontSize: '0.9em' }}>
           {`Thinking${'.'.repeat(dotCount)}`}
         </div>
       )}
@@ -237,52 +463,261 @@ const OllamaModelPicker: React.FC = () => {
   );
 };
 
+const OpenRouterModelPicker: React.FC = () => {
+  const provider = useAIProviderStore();
+  const [models, setModels] = React.useState<string[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/models');
+      if (!res.ok) throw new Error('Failed to list models');
+      const data = await res.json();
+      const list: string[] = Array.isArray(data?.data)
+        ? data.data
+            .map((m: any) => m?.id as string)
+            .filter((id: string) => typeof id === 'string' && /:free$/.test(id))
+        : [];
+      setModels(list);
+      if (list.length > 0) {
+        const cur = provider.openrouter.model || '';
+        if (!cur || !list.includes(cur)) {
+          provider.saveOpenRouter({ model: list[0] });
+        }
+      }
+    } catch (e) {
+      setError((e as Error)?.message || 'Failed to fetch models');
+      setModels([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  return (
+    <div className='grid gap-2 text-xs'>
+      <div className='flex gap-2'>
+        <input
+          className='input input-bordered input-xs flex-1'
+          placeholder='OpenRouter API Key'
+          type='password'
+          defaultValue={provider.openrouter.apiKey || ''}
+          onBlur={(e) => provider.saveOpenRouter({ apiKey: e.target.value })}
+        />
+        <button className='btn btn-outline btn-xs' onClick={load} title='Refresh models'>
+          <FiRefreshCw size={12} />
+        </button>
+      </div>
+      <div className='text-[11px] opacity-70'>
+        Only free models are shown. Create a free key at openrouter.ai.
+      </div>
+      <select
+        className='select select-bordered select-xs'
+        value={provider.openrouter.model || ''}
+        onChange={(e) => provider.saveOpenRouter({ model: e.target.value })}
+      >
+        <option value='' disabled>
+          {loading ? 'Loading models…' : models.length ? 'Choose a model' : 'No free models found'}
+        </option>
+        {models.map((m) => (
+          <option key={m} value={m}>
+            {m}
+          </option>
+        ))}
+      </select>
+      {error && <div className='text-[11px] text-error'>{error}</div>}
+    </div>
+  );
+};
+
 const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const visible = useAIChatStore((s) => s.visibleByBookKey[bookKey]);
   const input = useAIChatStore((s) => s.inputByBookKey[bookKey]);
   const setInput = useAIChatStore((s) => s.setInput);
-  const messagesSel = useAIChatStore((s) => s.messagesByBookKey[bookKey]);
+  const EMPTY_THREADS: AIChatThread[] = React.useMemo(() => [], []);
+  const threads = useAIChatStore((s) => (s.threadsByBookKey[bookKey] as AIChatThread[]) || EMPTY_THREADS, shallow);
+  const activeThreadId = useAIChatStore((s) => s.activeThreadIdByBookKey[bookKey]);
   const addUserMessage = useAIChatStore((s) => s.addUserMessage);
   const startAssistantMessage = useAIChatStore((s) => s.startAssistantMessage);
   const appendAssistantChunk = useAIChatStore((s) => s.appendAssistantChunk);
   const setStreaming = useAIChatStore((s) => s.setStreaming);
   const setVisible = useAIChatStore((s) => s.setVisible);
   const clearContext = useAIChatStore((s) => s.clearContext);
-  const clearChat = useAIChatStore((s) => s.clear);
+  const createThread = useAIChatStore((s) => s.createThread);
+  const setActiveThread = useAIChatStore((s) => s.setActiveThread);
+  const ensureThreadExists = useAIChatStore((s) => s.ensureThreadExists);
   const provider = useAIProviderStore();
   const [activeProvider, setActiveProvider] = React.useState<ProviderName>(() => provider.defaultProvider as ProviderName);
   // Memory & summary
-  const summary = useAIChatStore((s) => s.summaryByBookKey[bookKey] || '');
   const setSummary = useAIChatStore((s) => s.setSummary);
   const retrieveNotes = useAIChatStore((s) => s.retrieveNotes);
   const addNotes = useAIChatStore((s) => s.addNotes);
   const gcNotes = useAIChatStore((s) => s.gcNotes);
   const EMPTY_CTX: string[] = React.useMemo(() => [], []);
   const EMPTY_EXPANDED: Record<number, boolean> = React.useMemo(() => ({}), []);
-  const contextFromStore = useAIChatStore((s) => s.contextByBookKey[bookKey]);
+  const contextFromStore = useAIChatStore((s) => s.contextByBookKey[bookKey], shallow);
   const removeContextAt = useAIChatStore((s) => s.removeContextAt);
   const contextSnippets = contextFromStore ?? EMPTY_CTX;
-  const expandedFromStore = useAIChatStore((s) => s.expandedContextByBookKey[bookKey]);
+  const expandedFromStore = useAIChatStore((s) => s.expandedContextByBookKey[bookKey], shallow);
   const expandedMap = expandedFromStore ?? EMPTY_EXPANDED;
   const toggleContextExpanded = useAIChatStore((s) => s.toggleContextExpanded);
   const [showSettings, setShowSettings] = React.useState(false);
+  const [threadListOpen, setThreadListOpen] = React.useState(false);
+  
+  // Book data and reader store hooks
+  const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
+  const { getProgress } = useReaderStore();
+  const { settings } = useSettingsStore();
+  const { envConfig } = useEnv();
+  
+  // Lookout agent state management
+  const [lookoutModalOpen, setLookoutModalOpen] = useState(false);
+  const [lookoutQuestion, setLookoutQuestion] = useState('');
+  const [lookoutContext, setLookoutContext] = useState<string | undefined>(undefined);
+  
+  // Panel resize functionality
+  const [panelWidth, setPanelWidth] = React.useState(448); // Start with default width
+  const [isResizing, setIsResizing] = React.useState(false);
+  const resizeRef = React.useRef<HTMLDivElement>(null);
+  const startXRef = React.useRef<number>(0);
+  const startWidthRef = React.useRef<number>(0);
+
+  // Handle resize start
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    startXRef.current = e.clientX;
+    startWidthRef.current = panelWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  // Handle resize move
+  React.useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = startXRef.current - e.clientX;
+      const newWidth = Math.max(320, Math.min(800, startWidthRef.current + deltaX));
+      setPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      // Finalize the panel width when mouse is released
+      const finalDeltaX = startXRef.current - e.clientX;
+      const finalWidth = Math.max(320, Math.min(800, startWidthRef.current + finalDeltaX));
+      setPanelWidth(finalWidth);
+      
+      setIsResizing(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+  
+  // Performance optimization refs
+  const debouncedDetectionRef = useRef<((input: string) => void) | null>(null);
+  const [, setIsLookoutCommand] = useState(false);
+  
+  // Initialize debounced command detection
+  useEffect(() => {
+    if (!debouncedDetectionRef.current) {
+      debouncedDetectionRef.current = (inputValue: string) => {
+        PerformanceOptimizationService.detectLookoutCommandDebounced(inputValue, (result) => {
+          setIsLookoutCommand(result.isLookoutCommand);
+        });
+      };
+    }
+  }, []);
+  
+  // Handle input changes with debounced command detection
+  const handleInputChange = useCallback((value: string) => {
+    setInput(bookKey, value);
+    
+    // Debounced command detection for UI feedback
+    if (debouncedDetectionRef.current) {
+      debouncedDetectionRef.current(value);
+    }
+  }, [bookKey, setInput]);
+
+  // Cleanup effect for performance optimizations
+  useEffect(() => {
+    return () => {
+      // Cancel any pending lookout requests when component unmounts
+      PerformanceOptimizationService.cancelAllRequests();
+    };
+  }, []);
+
+  // Ensure a thread exists when component mounts (after hydrating from disk)
+  useEffect(() => {
+    if (visible && bookKey) {
+      (async () => {
+        const hydrate = useAIChatStore.getState().hydrateThreads;
+        await hydrate(bookKey);
+        ensureThreadExists(bookKey);
+      })();
+    }
+  }, [visible, bookKey, ensureThreadExists]);
+
+  const activeThread = React.useMemo(() => {
+    const thr = threads.find((t) => t.id === activeThreadId) || threads[0];
+    return thr || null;
+  }, [threads, activeThreadId]);
+  const messages = activeThread?.messages ?? [];
+  const summary = activeThread?.summary ?? '';
 
   const sendPrompt = useCallback(async () => {
     const prompt = (input ?? '').trim();
     if (!prompt || !visible) return;
+    
+    // Check if this is a lookout command (immediate check for send action)
+    const lookoutCommand = detectLookoutCommand(prompt, contextSnippets);
+    if (lookoutCommand.isLookoutCommand) {
+      // Handle lookout command by opening the modal
+      setLookoutQuestion(lookoutCommand.question);
+      setLookoutContext(lookoutCommand.highlightedContext);
+      setLookoutModalOpen(true);
+      
+      // Clear input since we detected the command
+      setInput(bookKey, '');
+      return;
+    }
+    
+    // Check if this is a notes command
+    const notesCommand = detectNotesCommand(prompt, contextSnippets);
+    if (notesCommand.isNotesCommand) {
+      // Handle notes command by creating the note and showing response in chat
+      await handleNotesCommand(notesCommand, contextSnippets);
+      return;
+    }
+    
     // snapshot current context to bind to this user message
     const boundContext = contextSnippets.length ? [...contextSnippets] : undefined;
 
     // Build composite prompt with memory (before mutating messages state)
     const SLIDING_WINDOW_TURNS = 8;
-    const prevMessages = (messagesSel ?? []).slice(-SLIDING_WINDOW_TURNS);
+    const prevMessages = (messages ?? []).slice(-SLIDING_WINDOW_TURNS);
     const recent = prevMessages
       .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
       .join('\n');
     const retrieved = retrieveNotes?.(bookKey, prompt, 5) ?? [];
+    const summaryLocal = summary || '';
     const systemPreamble = [
       'You are a concise, helpful assistant.',
-      summary ? `Conversation summary:\n${summary}` : '',
+      summaryLocal ? `Conversation summary:\n${summaryLocal}` : '',
       retrieved.length ? `Relevant notes:\n- ${retrieved.join('\n- ')}` : '',
       boundContext?.length ? `Additional context:\n${boundContext.join('\n\n')}` : '',
       recent ? `Recent chat:\n${recent}` : '',
@@ -309,7 +744,7 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         const toBase64 = (buffer: ArrayBuffer) => {
           let binary = '';
           const bytes = new Uint8Array(buffer);
-          for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+          for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]!);
           // btoa is available in browser/webview
           return btoa(binary);
         };
@@ -398,6 +833,30 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             } catch {}
           }
         }
+      } else if (provider.defaultProvider === 'openrouter') {
+        const apiKey = provider.openrouter.apiKey || '';
+        const modelName = provider.openrouter.model || 'meta-llama/llama-4-maverick:free';
+        if (!apiKey) throw new Error('OpenRouter API key is required');
+        const messagesForOR = [
+          ...(systemPreamble ? [{ role: 'system', content: systemPreamble }] : []),
+          { role: 'user', content: prompt },
+        ];
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({ model: modelName, messages: messagesForOR, temperature: 0.7, max_tokens: 1024, stream: false }),
+        });
+        if (!res.ok) {
+          try { console.error('OpenRouter error', await res.text()); } catch {}
+          throw new Error('OpenRouter request failed');
+        }
+        const data = await res.json();
+        const text = data?.choices?.[0]?.message?.content || '';
+        fullAssistant = text;
+        appendAssistantChunk(bookKey, text);
       } else {
         const endpoint = provider.selfHosted.endpoint;
         const modelName = provider.selfHosted.model || 'mistral:7b';
@@ -455,8 +914,7 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     try {
       const lastUser = prompt;
       // get the latest assistant content from store to be safe
-      const state = (useAIChatStore as any).getState?.();
-      const msgs: any[] = state?.messagesByBookKey?.[bookKey] ?? messagesSel ?? [];
+      const msgs: any[] = messages ?? [];
       const lastAssistant = [...msgs].reverse().find((m) => m.role === 'assistant')?.content || '';
 
       const genOnce = async (p: string): Promise<string> => {
@@ -487,6 +945,17 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           const data = await res.json().catch(() => undefined as any);
           if (data && typeof data.response === 'string') return data.response;
           return typeof data === 'string' ? data : '';
+        } else if (provider.defaultProvider === 'openrouter') {
+          const apiKey = provider.openrouter.apiKey || '';
+          const modelName = provider.openrouter.model || 'meta-llama/llama-4-maverick:free';
+          const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: modelName, messages: [{ role: 'user', content: p }], stream: false }),
+          });
+          if (!res.ok) throw new Error('OpenRouter request failed');
+          const data = await res.json();
+          return data?.choices?.[0]?.message?.content || '';
         } else {
           const endpoint = provider.selfHosted.endpoint;
           const modelName = provider.selfHosted.model || 'mistral:7b';
@@ -547,9 +1016,71 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       } catch {}
       gcNotes(bookKey);
     } catch {}
-  }, [appendAssistantChunk, bookKey, input, setInput, visible, addUserMessage, startAssistantMessage, setStreaming, provider, contextSnippets, messagesSel, retrieveNotes, summary, setSummary, addNotes, gcNotes]);
+  }, [appendAssistantChunk, bookKey, input, setInput, visible, addUserMessage, startAssistantMessage, setStreaming, provider, contextSnippets, retrieveNotes, setSummary, addNotes, gcNotes, messages, summary]);
 
-  const messages = messagesSel ?? [];
+  // Handle notes command - create note and show response in chat
+  const handleNotesCommand = async (notesCommand: any, contextSnippets: string[]) => {
+    try {
+      // Create the note
+      const newNote = {
+        id: uniqueId(),
+        type: 'annotation' as const,
+        cfi: '', // Will be set from progress
+        text: notesCommand.highlightedContext || '',
+        note: notesCommand.noteText.trim(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      // Get current progress for CFI and page info
+      const progress = getProgress(bookKey);
+      if (progress?.location) {
+        newNote.cfi = progress.location;
+      }
+
+      // Add to existing notes in config
+      const config = getConfig(bookKey);
+      if (config) {
+        const existingNotes = config.booknotes || [];
+        const updatedNotes = [...existingNotes, newNote];
+        // Update local store state so UI reflects immediately
+        const updatedConfig = updateBooknotes(bookKey, updatedNotes);
+        if (updatedConfig) {
+          await saveConfig(envConfig, bookKey, updatedConfig, settings);
+        }
+      }
+
+      // Add user message to chat
+      addUserMessage(bookKey, `@notes ${notesCommand.noteText}`, contextSnippets.length ? [...contextSnippets] : undefined);
+      
+      // Add assistant response confirming note creation
+      const responseText = notesCommand.highlightedContext 
+        ? `Note added successfully! 📝\n\n**Note:** ${notesCommand.noteText}\n**Context:** ${notesCommand.highlightedContext}`
+        : `Note added successfully! 📝\n\n**Note:** ${notesCommand.noteText}`;
+      // Append as assistant message in the chat stream
+      startAssistantMessage(bookKey);
+      appendAssistantChunk(bookKey, responseText);
+      
+      // Clear context and input
+      clearContext(bookKey);
+      setInput(bookKey, '');
+      
+    } catch (error) {
+      console.error('Failed to create note:', error);
+      
+      // Add user message to chat
+      addUserMessage(bookKey, `@notes ${notesCommand.noteText}`, contextSnippets.length ? [...contextSnippets] : undefined);
+      
+      // Add error response
+      startAssistantMessage(bookKey);
+      appendAssistantChunk(bookKey, '❌ Failed to create note. Please try again.');
+      
+      // Clear context and input
+      clearContext(bookKey);
+      setInput(bookKey, '');
+    }
+  };
+
   const inputVal = input ?? '';
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const lastMessageContent = messages.length ? messages[messages.length - 1]!.content : '';
@@ -574,7 +1105,7 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     <>
     <div
       style={{
-        width: panelWidthPx,
+        width: panelWidth,
         top: 'var(--reader-header-height, 44px)',
         bottom: 0,
       }}
@@ -583,19 +1114,56 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         visible ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'
       )}
     >
+      {/* Resize handle */}
+      <div
+        ref={resizeRef}
+        className={clsx(
+          "absolute left-0 top-0 bottom-0 w-1 cursor-col-resize transition-all duration-200",
+          "hover:w-1.5 hover:bg-primary/50 active:bg-primary",
+          isResizing && "w-1.5 bg-primary shadow-lg"
+        )}
+        onMouseDown={handleResizeStart}
+        title="Drag to resize panel"
+      />
+      
+      {/* Width indicator */}
+      {isResizing && (
+        <div className="absolute left-2 top-4 bg-base-100 border border-base-300 rounded px-2 py-1 text-xs font-mono shadow-lg z-20">
+          {panelWidth}px
+        </div>
+      )}
+      
+      {/* Resize indicator overlay */}
+      {isResizing && (
+        <div className="absolute inset-0 bg-base-300/20 pointer-events-none z-10" />
+      )}
+      
       <div className='flex items-center justify-between border-b border-base-300 px-3 py-2'>
-        <div className='text-sm font-semibold'>Saraswoti AI</div>
+        <div className='text-sm font-semibold'>Ask Anything...</div>
         <div className='flex items-center gap-2'>
           <Button icon={<FiSettings size={14} />} onClick={() => setShowSettings(true)} tooltip='Settings' tooltipDirection='bottom' />
-          <Button icon={<FiPlus size={14} />} onClick={() => clearChat(bookKey)} tooltip='New Chat' tooltipDirection='bottom' />
+          <Button
+            icon={<FiPlus size={14} />}
+            onClick={() => {
+              const id = createThread(bookKey);
+              setActiveThread(bookKey, id);
+            }}
+            tooltip='New Chat'
+            tooltipDirection='bottom'
+          />
           <Button icon={<FiX size={16} />} onClick={() => setVisible(bookKey, false)} tooltip='Close' tooltipDirection='bottom' />
         </div>
       </div>
       <div ref={scrollRef} className='flex-1 overflow-auto p-3 space-y-3 select-text'>
-        {messages.map((m, idx) => (
+        {messages.length === 0 && (
+          <div className='rounded-lg border border-base-300 bg-base-200/30 p-3 text-xs text-base-content/70'>
+            use <code>@notes</code> to add content in notebook. You can also add highlighted text as content
+          </div>
+        )}
+        {messages.map((m: AIChatMessage, idx: number) => (
           <React.Fragment key={idx}>
              {m.role === 'user' && Array.isArray(m.context) && m.context.length > 0 && (
-              m.context.map((t, ci) => {
+              m.context.map((t: string, ci: number) => {
                 const perMsg = (expandedMap as any)[idx] || {};
                 const expanded = !!perMsg[ci];
                 return (
@@ -629,7 +1197,7 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             </div>
           </React.Fragment>
         ))}
-          {contextSnippets.length > 0 && contextSnippets.map((t, ci) => {
+          {contextSnippets.length > 0 && contextSnippets.map((t: string, ci: number) => {
           const perMsg = (expandedMap as any)[-1] || {};
           const expanded = !!perMsg[ci];
           return (
@@ -667,10 +1235,53 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         })}
       </div>
       <div className='border-t border-base-300 px-2 pt-2 pb-0'>
+        {/* Thread dropdown above input */}
+        <div className='mb-2'>
+          {activeThread && (
+            <div className='relative'>
+              {threadListOpen && (
+                <div className='absolute bottom-full mb-1 max-h-48 w-full overflow-auto rounded-t-md border border-base-300 bg-base-100 shadow'>
+                  {threads.map((t: AIChatThread) => (
+                    <button
+                      key={t.id}
+                      className={clsx('flex w-full items-center justify-between px-3 py-2 text-left text-xs hover:bg-base-200', t.id === (activeThread as AIChatThread).id && 'bg-base-200/60')}
+                      onClick={() => {
+                        setActiveThread(bookKey, t.id);
+                        setThreadListOpen(false);
+                      }}
+                    >
+                      <span className='truncate'>{t.title || 'New chat'}</span>
+                      <span className='opacity-60'>{new Date(t.updatedAt || Date.now()).toLocaleDateString()}</span>
+                    </button>
+                  ))}
+                  <div className='border-t border-base-300 p-2'>
+                    <button
+                      className='btn btn-outline btn-xs w-full'
+                      onClick={() => {
+                        const id = createThread(bookKey);
+                        setActiveThread(bookKey, id);
+                      }}
+                    >
+                      New chat
+                    </button>
+                  </div>
+                </div>
+              )}
+              <button
+                className='flex w-full items-center justify-between rounded-t-md border border-base-300 bg-base-100 px-3 py-2 text-left text-xs'
+                onClick={() => setThreadListOpen((v) => !v)}
+                title='Chat threads'
+              >
+                <span className='truncate'>{activeThread?.title || 'New chat'}</span>
+                <span className={clsx('transition-transform', threadListOpen && 'rotate-180')}>▾</span>
+              </button>
+            </div>
+          )}
+        </div>
         <InputRow
           bookKey={bookKey}
           value={inputVal}
-          onChange={(v) => setInput(bookKey, v)}
+          onChange={handleInputChange}
           onSend={sendPrompt}
         />
       </div>
@@ -696,6 +1307,7 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 <option value='ollama'>Ollama (local)</option>
                 <option value='gemini'>Gemini</option>
                 <option value='openai'>OpenAI</option>
+                <option value='openrouter'>OpenRouter</option>
               </select>
             </div>
 
@@ -760,10 +1372,40 @@ const AIChatPanel: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                 </div>
               </div>
             )}
+
+            {activeProvider === 'openrouter' && (
+              <div className='rounded-lg border border-base-300 p-3'>
+                <div className='mb-2 flex items-center gap-2 text-xs font-semibold'>
+                  {provider.defaultProvider === 'openrouter' && <span className='h-2 w-2 rounded-full bg-green-500'></span>}
+                  <span>OpenRouter</span>
+                </div>
+                <OpenRouterModelPicker />
+                <div className='mt-2 flex gap-2'>
+                  <button className='btn btn-outline btn-xs' onClick={()=>provider.setDefault('openrouter')}>Set Default</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
     )}
+    
+    {/* Lookout Agent Modal - Lazy Loaded */}
+    {lookoutModalOpen && (
+      <LookoutAgentLazy
+        isOpen={lookoutModalOpen}
+        onClose={() => setLookoutModalOpen(false)}
+        question={lookoutQuestion}
+        context={lookoutContext}
+        bookKey={bookKey}
+        onLoadError={() => {
+          console.error('Failed to load LookoutAgent');
+          setLookoutModalOpen(false);
+        }}
+      />
+    )}
+    
+
     </>
   );
 };

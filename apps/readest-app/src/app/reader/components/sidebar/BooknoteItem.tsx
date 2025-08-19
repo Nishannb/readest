@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { eventDispatcher } from '@/utils/event';
@@ -26,6 +27,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById } = useReaderStore();
   const { setNotebookEditAnnotation, setNotebookVisible } = useNotebookStore();
+  const { setSideBarVisible } = useSidebarStore();
   const separatorWidth = useResponsiveSize(3);
 
   const { text, cfi, note } = item;
@@ -37,24 +39,34 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item }) => {
     eventDispatcher.dispatch('navigate', { bookKey, cfi });
 
     getView(bookKey)?.goTo(cfi);
-    if (note) {
-      setNotebookVisible(true);
-    }
+    
+    // Close the sidebar dashboard instead of opening notebook
+    setSideBarVisible(false);
   };
 
-  const deleteNote = (note: BookNote) => {
-    if (!bookKey) return;
+  const deleteNote = async (note: BookNote) => {
     const config = getConfig(bookKey);
     if (!config) return;
     const { booknotes = [] } = config;
-    booknotes.forEach((item) => {
+    const updatedBooknotes = [...booknotes];
+    
+    for (const item of updatedBooknotes) {
       if (item.id === note.id) {
         item.deletedAt = Date.now();
         const views = getViewsById(bookKey.split('-')[0]!);
-        views.forEach((view) => view?.addAnnotation(item, true));
+        for (const view of views) {
+          if ((view as any).removeAnnotationFromSystem) {
+            try {
+              await (view as any).removeAnnotationFromSystem(item.cfi);
+            } catch (e) {
+              console.warn('Failed to remove annotation from system:', e);
+            }
+          }
+        }
       }
-    });
-    const updatedConfig = updateBooknotes(bookKey, booknotes);
+    }
+    
+    const updatedConfig = updateBooknotes(bookKey, updatedBooknotes);
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
     }

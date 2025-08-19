@@ -6,15 +6,26 @@ import { PiNotePencil as NoteIcon } from 'react-icons/pi';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAIChatStore } from '@/store/aiChatStore';
 
 const TabNavigation: React.FC<{
   activeTab: string;
   onTabChange: (tab: string) => void;
-}> = ({ activeTab, onTabChange }) => {
+  bookKey: string;
+}> = ({ activeTab, onTabChange, bookKey }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const setAIVisible = useAIChatStore((s) => s.setVisible);
 
   const tabs = ['toc', 'annotations', 'bookmarks'];
+
+  const handleTabChange = (tab: string) => {
+    // Close AI chat panel when switching to annotations tab (notebook)
+    if (tab === 'annotations') {
+      setAIVisible(bookKey, false);
+    }
+    onTabChange(tab);
+  };
 
   return (
     <div
@@ -41,7 +52,7 @@ const TabNavigation: React.FC<{
             tab === 'toc' ? _('TOC') : tab === 'annotations' ? _('Annotate') : _('Bookmark')
           }
         >
-          <div className={clsx('flex h-6 items-center')} onClick={() => onTabChange(tab)}>
+          <div className={clsx('flex h-6 items-center')} onClick={() => handleTabChange(tab)}>
             {tab === 'toc' ? (
               <TOCIcon className='mx-auto' />
             ) : tab === 'annotations' ? (

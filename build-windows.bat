@@ -45,3 +45,6 @@ cargo tauri build --target x86_64-pc-windows-msvc
 
 echo Build completed! Check the target\x86_64-pc-windows-msvc\release\ directory for the output files.
 pause
+
+
+

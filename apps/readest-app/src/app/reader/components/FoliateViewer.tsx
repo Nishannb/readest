@@ -13,7 +13,7 @@ import { usePagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
-import { useKOSync } from '../hooks/useKOSync';
+
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
@@ -46,8 +46,10 @@ import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
+import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
+import { Overlayer } from 'foliate-js/overlayer.js';
 import { getViewInsets } from '@/utils/insets';
-import ConfirmSyncDialog from './ConfirmSyncDialog';
+
 // import { writeFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 import { eventDispatcher } from '@/utils/event';
 import { useAIChatStore } from '@/store/aiChatStore';
@@ -76,6 +78,7 @@ const FoliateViewer: React.FC<{
   const viewSettings = getViewSettings(bookKey);
 
   const viewRef = useRef<FoliateView | null>(null);
+  const [eventView, setEventView] = useState<FoliateView | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const [isScreenshotMode, setIsScreenshotMode] = useState(false);
@@ -96,12 +99,7 @@ const FoliateViewer: React.FC<{
   useUICSS(bookKey);
   useProgressSync(bookKey);
   useProgressAutoSave(bookKey);
-  const {
-    syncState,
-    conflictDetails,
-    resolveConflictWithLocal,
-    resolveConflictWithRemote,
-  } = useKOSync(bookKey);
+
   useTextTranslation(bookKey, viewRef.current);
 
   const progressRelocateHandler = (event: Event) => {
@@ -232,6 +230,147 @@ const FoliateViewer: React.FC<{
     }
   };
 
+  const reapplyAnnotationsForIndex = (index: number) => {
+    const sectionAnnotations = annotationsMapRef.current.get(index);
+    if (sectionAnnotations && sectionAnnotations.length > 0) {
+      sectionAnnotations.forEach((annotation: any) => {
+        try { viewRef.current?.addAnnotation(annotation); } catch {}
+      });
+    }
+  };
+
+  // PDF-specific highlighting function that creates positioned divs
+  const createPDFHighlight = async (cfi: string, color: string) => {
+    try {
+      console.log('📍 Creating PDF highlight for CFI:', cfi);
+      
+      if (!viewRef.current) {
+        console.log('⚠️ No view available for PDF highlighting');
+        return;
+      }
+
+      // Resolve the CFI to get the anchor/range
+      const resolved = await viewRef.current.resolveNavigation(cfi);
+      if (!resolved || !resolved.anchor) {
+        console.log('⚠️ Could not resolve CFI for PDF highlighting');
+        return;
+      }
+
+      // Get the content document
+      const contents = viewRef.current.renderer.getContents();
+      const content = contents?.find((c: any) => c.index === resolved.index);
+      if (!content || !content.doc) {
+        console.log('⚠️ Could not find document for PDF highlighting');
+        return;
+      }
+
+      const doc = content.doc;
+      const range = typeof resolved.anchor === 'function' ? resolved.anchor(doc) : resolved.anchor;
+      
+      if (!range) {
+        console.log('⚠️ Could not get range for PDF highlighting');
+        return;
+      }
+
+      console.log('📍 Got range for PDF highlighting:', range);
+
+      // Get the client rects for the range
+      const rects = Array.from(range.getClientRects());
+      console.log('📍 Range rects:', rects.length);
+
+      if (rects.length === 0) {
+        console.log('⚠️ No client rects found for range');
+        return;
+      }
+
+      // Find the PDF container (iframe or div containing the PDF)
+      const pdfContainer = containerRef.current?.querySelector('iframe') || 
+                          containerRef.current?.querySelector('[data-pdf-page]') ||
+                          containerRef.current;
+
+      if (!pdfContainer) {
+        console.log('⚠️ Could not find PDF container');
+        return;
+      }
+
+      console.log('📍 Found PDF container:', pdfContainer);
+
+      // Get container bounds
+      const containerRect = pdfContainer.getBoundingClientRect();
+      console.log('📍 Container rect:', containerRect);
+
+      // Create highlight divs for each rect
+      rects.forEach((rect, index) => {
+        console.log(`📍 Creating highlight div ${index + 1}/${rects.length}:`, rect);
+
+        const highlightDiv = document.createElement('div');
+        highlightDiv.className = 'pdf-highlight-overlay';
+        highlightDiv.setAttribute('data-cfi', cfi);
+        
+        // Position the highlight div absolutely over the text
+        Object.assign(highlightDiv.style, {
+          position: 'absolute',
+          left: `${rect.left}px`,
+          top: `${rect.top}px`,
+          width: `${rect.width}px`,
+          height: `${rect.height}px`,
+          backgroundColor: color,
+          opacity: '0.3',
+          pointerEvents: 'none',
+          zIndex: '10',
+          borderRadius: '2px',
+          mixBlendMode: 'multiply' // Better blending with text
+        });
+
+        // Add to the container
+        if (pdfContainer.style.position !== 'relative' && pdfContainer.style.position !== 'absolute') {
+          pdfContainer.style.position = 'relative';
+        }
+        
+        pdfContainer.appendChild(highlightDiv);
+        console.log('✅ PDF highlight div created and positioned');
+      });
+
+      console.log('🎯 PDF highlight overlay created successfully!');
+
+    } catch (error) {
+      console.error('❌ Error creating PDF highlight:', error);
+    }
+  };
+
+  // Function to remove PDF highlights
+  const removePDFHighlight = (cfi: string) => {
+    try {
+      const highlights = containerRef.current?.querySelectorAll(`[data-cfi="${cfi}"]`);
+      highlights?.forEach(highlight => highlight.remove());
+      console.log('🗑️ Removed PDF highlight for CFI:', cfi);
+    } catch (error) {
+      console.error('❌ Error removing PDF highlight:', error);
+    }
+  };
+
+  // Function to reapply all PDF highlights for a section
+  const reapplyPDFHighlights = async (index: number) => {
+    try {
+      const sectionAnnotations = annotationsMapRef.current.get(index);
+      if (sectionAnnotations && sectionAnnotations.length > 0) {
+        console.log('🔄 Reapplying PDF highlights for section', index);
+        
+        for (const annotation of sectionAnnotations) {
+          if (annotation.style === 'highlight') {
+            const hexColor = annotation.color && HIGHLIGHT_COLOR_HEX[annotation.color] 
+              ? HIGHLIGHT_COLOR_HEX[annotation.color] 
+              : annotation.color || '#facc15';
+            
+            await createPDFHighlight(annotation.value, hexColor);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error reapplying PDF highlights:', error);
+    }
+  };
+
   const docRelocateHandler = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     if (detail.reason !== 'scroll' && detail.reason !== 'page') return;
@@ -247,6 +386,7 @@ const FoliateViewer: React.FC<{
         }
       });
     }
+    try { if (typeof detail.index === 'number') reapplyAnnotationsForIndex(detail.index); } catch {}
   };
 
   const { handlePageFlip, handleContinuousScroll } = usePagination(bookKey, viewRef, containerRef);
@@ -685,10 +825,197 @@ const FoliateViewer: React.FC<{
     }
   };
 
-  useFoliateEvents(viewRef.current, {
+  // Annotation management system (similar to reader.js)
+  const annotationsMapRef = useRef<Map<number, any[]>>(new Map());
+  const annotationsByValueRef = useRef<Map<string, any>>(new Map());
+
+  // Function to add a new annotation to the system
+  const addAnnotationToSystem = async (annotation: any, sectionIndex: number) => {
+    console.log('🔧 addAnnotationToSystem called:', { annotation, sectionIndex });
+    
+    const annotationForSystem = {
+      value: annotation.cfi,
+      color: annotation.color,
+      style: annotation.style,
+      note: annotation.note || '',
+      ...annotation
+    };
+    
+    console.log('📝 Annotation for system:', annotationForSystem);
+    
+    // Add to section map
+    let sectionAnnotations = annotationsMapRef.current.get(sectionIndex);
+    if (!sectionAnnotations) {
+      sectionAnnotations = [];
+      annotationsMapRef.current.set(sectionIndex, sectionAnnotations);
+    }
+    
+    // Check if annotation already exists
+    const existingIndex = sectionAnnotations.findIndex(a => a.value === annotationForSystem.value);
+    if (existingIndex === -1) {
+      sectionAnnotations.push(annotationForSystem);
+      console.log('➕ Added new annotation to section', sectionIndex, '- total:', sectionAnnotations.length);
+    } else {
+      sectionAnnotations[existingIndex] = annotationForSystem;
+      console.log('🔄 Updated existing annotation in section', sectionIndex);
+    }
+    
+    // Add to value map
+    annotationsByValueRef.current.set(annotationForSystem.value, annotationForSystem);
+    
+    // Add to view and FORCE immediate visual rendering
+    if (viewRef.current) {
+      console.log('📤 Adding annotation to view:', annotationForSystem.value);
+      
+      try {
+        // Add to the view system first
+        await viewRef.current.addAnnotation(annotationForSystem);
+        console.log('✅ Successfully added annotation to view');
+        
+        // FORCE immediate visual overlay drawing for PDFs
+        if (annotationForSystem.style === 'highlight') {
+          console.log('🎨 Forcing immediate PDF highlight rendering...');
+          
+          const hexColor = annotationForSystem.color && HIGHLIGHT_COLOR_HEX[annotationForSystem.color] 
+            ? HIGHLIGHT_COLOR_HEX[annotationForSystem.color] 
+            : annotationForSystem.color || '#facc15'; // default yellow
+          
+          console.log('🎨 Using hex color:', hexColor);
+          
+          // For PDFs, we need to create highlight divs positioned over the text layer
+          await createPDFHighlight(annotationForSystem.value, hexColor);
+        }
+      } catch (error) {
+        console.error('❌ Error adding annotation to view:', error);
+      }
+    } else {
+      console.log('⚠️ No view available to add annotation to');
+    }
+  };
+
+  // Function to remove annotation from system
+  const removeAnnotationFromSystem = (cfi: string) => {
+    // Remove from value map
+    annotationsByValueRef.current.delete(cfi);
+    
+    // Remove from section maps
+    for (const [index, annotations] of annotationsMapRef.current.entries()) {
+      const filteredAnnotations = annotations.filter(a => a.value !== cfi);
+      if (filteredAnnotations.length !== annotations.length) {
+        annotationsMapRef.current.set(index, filteredAnnotations);
+      }
+    }
+    
+    // Remove from view
+    viewRef.current?.addAnnotation({ value: cfi }, true);
+    
+    // Remove PDF highlight overlay
+    removePDFHighlight(cfi);
+    
+    console.log('🗑️ Removed annotation from system:', cfi);
+  };
+
+  const onCreateOverlay = (event: Event) => {
+    const detail = (event as CustomEvent).detail;
+    const { index } = detail;
+    console.log('🎨 Create overlay for section:', index);
+    
+    // Debug: Check the overlay structure
+    if (viewRef.current && viewRef.current.renderer) {
+      const contents = viewRef.current.renderer.getContents();
+      if (contents && contents[index]) {
+        console.log('🔍 Section content:', contents[index]);
+        if (contents[index].overlayer) {
+          console.log('🔍 Overlay element:', contents[index].overlayer.element);
+          console.log('🔍 Overlay in DOM:', document.contains(contents[index].overlayer.element));
+        } else {
+          console.log('⚠️ No overlay found for section', index);
+        }
+      } else {
+        console.log('⚠️ No content found for section', index);
+      }
+    }
+    
+    // Get stored annotations for this specific section
+    const sectionAnnotations = annotationsMapRef.current.get(index);
+    if (sectionAnnotations && sectionAnnotations.length > 0) {
+      console.log('📝 Re-adding', sectionAnnotations.length, 'annotations for section', index);
+      
+      // Add annotations to the view
+      sectionAnnotations.forEach((annotation: any) => {
+        console.log('➕ Adding annotation:', annotation.value, 'color:', annotation.color, 'style:', annotation.style);
+        
+        // Ensure the annotation has the right structure for the view
+        const viewAnnotation = {
+          value: annotation.value,
+          color: annotation.color,
+          style: annotation.style,
+          note: annotation.note || '',
+          ...annotation
+        };
+        
+        viewRef.current?.addAnnotation(viewAnnotation);
+      });
+    } else {
+      console.log('📝 No annotations found for section', index);
+    }
+    
+    // For PDFs, also reapply the visual highlights
+    setTimeout(() => reapplyPDFHighlights(index), 100); // Small delay to ensure DOM is ready
+  };
+
+  const onDrawAnnotation = (event: Event) => {
+    const detail = (event as CustomEvent).detail;
+    const { draw, annotation, doc, range } = detail;
+    const value = annotation.value || annotation.cfi;
+    const systemAnnotation = annotationsByValueRef.current.get(value);
+
+    // Determine style/color robustly
+    const style = (systemAnnotation?.style || annotation.style || 'highlight') as 'highlight' | 'underline' | 'squiggly';
+    const colorKey = (systemAnnotation?.color || annotation.color) as keyof typeof HIGHLIGHT_COLOR_HEX | string | undefined;
+    const hexColor = typeof colorKey === 'string' && HIGHLIGHT_COLOR_HEX[colorKey as keyof typeof HIGHLIGHT_COLOR_HEX]
+      ? HIGHLIGHT_COLOR_HEX[colorKey as keyof typeof HIGHLIGHT_COLOR_HEX]
+      : (colorKey as string | undefined);
+
+    // For PDFs, range(anchor) can sometimes be null; derive rects from selection as fallback
+    if (style === 'highlight') {
+      if (range) {
+        draw(Overlayer.highlight, { color: hexColor });
+        return;
+      }
+      try {
+        const selection = doc?.getSelection?.();
+        const rects = Array.from(selection?.rangeCount ? selection.getRangeAt(0).getClientRects() : []).map(r => ({ left: r.left, top: r.top, width: r.width, height: r.height }));
+        if (rects.length) {
+          draw(Overlayer.highlight, { color: hexColor, __rects: rects });
+          return;
+        }
+      } catch {}
+      // final fallback: draw nothing but avoid crash
+      draw(Overlayer.highlight, { color: hexColor });
+    } else if (style === 'underline' || style === 'squiggly') {
+      draw(Overlayer[style], { color: hexColor });
+    }
+  };
+
+  const onShowAnnotation = (event: Event) => {
+    const detail = (event as CustomEvent).detail;
+    const annotation = annotationsByValueRef.current.get(detail.value);
+    if (annotation?.note) {
+      console.log('📝 Show annotation note:', annotation.note);
+    }
+  };
+
+  // IMPORTANT: bind events to a stateful view reference so React re-runs the effect
+  // when the view is created. Using viewRef.current directly would not trigger
+  // the effect because ref changes do not cause re-renders.
+  useFoliateEvents(eventView, {
     onLoad: docLoadHandler,
     onRelocate: progressRelocateHandler,
     onRendererRelocate: docRelocateHandler,
+    onCreateOverlay,
+    onDrawAnnotation,
+    onShowAnnotation,
   });
 
   useEffect(() => {
@@ -718,6 +1045,12 @@ const FoliateViewer: React.FC<{
       await view.open(bookDoc);
       // make sure we can listen renderer events after opening book
       viewRef.current = view;
+      setEventView(view);
+      
+      // Add annotation management methods to the view
+      (view as any).addAnnotationToSystem = addAnnotationToSystem;
+      (view as any).removeAnnotationFromSystem = removeAnnotationFromSystem;
+      
       setFoliateView(bookKey, view);
 
       const { book } = view;
@@ -859,14 +1192,7 @@ const FoliateViewer: React.FC<{
           </div>
         )}
       </div>
-      {syncState === 'conflict' && conflictDetails && (
-        <ConfirmSyncDialog
-          details={conflictDetails}
-          onConfirmLocal={resolveConflictWithLocal}
-          onConfirmRemote={resolveConflictWithRemote}
-          onClose={resolveConflictWithLocal}
-        />
-      )}
+
     </>
   );
 };

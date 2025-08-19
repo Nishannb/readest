@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { Position } from '@/utils/sel';
 import { FiCopy } from 'react-icons/fi';
 import { FaRegStar } from 'react-icons/fa';
+import { LuBrain } from "react-icons/lu";
 
 type Props = {
   position: Position;
@@ -37,7 +38,7 @@ const QuickActionsPopup: React.FC<Props> = ({ position, trianglePosition, onCopy
             <FiCopy size={14} />
           </button>
           <button className='btn btn-ghost btn-circle btn-xs' title='Ask AI' onClick={onAskAI}>
-            <FaRegStar size={14} />
+            <LuBrain size={14} />
           </button>
         </div>
       </div>

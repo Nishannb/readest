@@ -1,8 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
 import {
-  MdOutlineCloudDownload,
-  MdOutlineCloudUpload,
   MdOutlineDelete,
   MdOutlineEdit,
 } from 'react-icons/md';
@@ -28,10 +26,7 @@ interface BookDetailViewProps {
   fileSize: number | null;
   onEdit?: () => void;
   onDelete?: () => void;
-  onDeleteCloudBackup?: () => void;
   onDeleteLocalCopy?: () => void;
-  onDownload?: () => void;
-  onUpload?: () => void;
 }
 
 const BookDetailView: React.FC<BookDetailViewProps> = ({
@@ -40,10 +35,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   fileSize,
   onEdit,
   onDelete,
-  onDeleteCloudBackup,
   onDeleteLocalCopy,
-  onDownload,
-  onUpload,
 }) => {
   const _ = useTranslation();
 
@@ -84,15 +76,8 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                   <MenuItem
                     noIcon
                     transient
-                    label={_('Remove from Cloud & Device')}
+                    label={_('Remove from Device')}
                     onClick={onDelete}
-                  />
-                  <MenuItem
-                    noIcon
-                    transient
-                    label={_('Remove from Cloud Only')}
-                    onClick={onDeleteCloudBackup}
-                    disabled={!book.uploadedAt}
                   />
                   <MenuItem
                     noIcon
@@ -103,16 +88,6 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                   />
                 </div>
               </Dropdown>
-            )}
-            {book.uploadedAt && onDownload && (
-              <button onClick={onDownload}>
-                <MdOutlineCloudDownload className='fill-base-content' />
-              </button>
-            )}
-            {book.downloadedAt && onUpload && (
-              <button onClick={onUpload}>
-                <MdOutlineCloudUpload className='fill-base-content' />
-              </button>
             )}
           </div>
         </div>

@@ -230,6 +230,7 @@ const SideBar: React.FC<{
             onClose={() => setSideBarVisible(false)}
             onTogglePin={handleSideBarTogglePin}
             onToggleSearchBar={handleToggleSearchBar}
+            bookKey={sideBarBookKey}
           />
           <div
             className={clsx('search-bar', {

@@ -5,7 +5,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { RiFontSize } from 'react-icons/ri';
-import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
+import { RiDashboardLine } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
@@ -65,7 +65,7 @@ const SettingsDialog: React.FC<{ bookKey: string; config: BookConfig }> = ({ boo
     },
     {
       tab: 'Language',
-      icon: RiTranslate,
+      icon: RiDashboardLine,
       label: _('Language'),
     },
     {

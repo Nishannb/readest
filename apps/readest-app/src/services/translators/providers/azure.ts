@@ -49,6 +49,8 @@ const getAuthToken = async (): Promise<string> => {
 export const azureProvider: TranslationProvider = {
   name: 'azure',
   label: _('Azure Translator'),
+  authRequired: false,
+  quotaExceeded: false,
   translate: async (text: string[], sourceLang: string, targetLang: string): Promise<string[]> => {
     if (!text.length) return [];
 

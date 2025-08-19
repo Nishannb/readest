@@ -11,6 +11,8 @@ import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import WindowButtons from '@/components/WindowButtons';
 import { FaRegStar, FaStar } from 'react-icons/fa';
+import { FaBrain } from 'react-icons/fa6';
+import { LuBrain } from "react-icons/lu";
 import { FiZoomIn, FiZoomOut } from 'react-icons/fi';
 import Button from '@/components/Button';
 import { useAIChatStore } from '@/store/aiChatStore';
@@ -21,7 +23,7 @@ import SidebarToggler from './SidebarToggler';
 import BookmarkToggler from './BookmarkToggler';
 import NotebookToggler from './NotebookToggler';
 import SettingsToggler from './SettingsToggler';
-import TranslationToggler from './TranslationToggler';
+
 import ViewMenu from './ViewMenu';
 
 interface HeaderBarProps {
@@ -179,11 +181,10 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         onMouseLeave={() => !appService?.isMobile && setHoveredBookKey('')}
       >
         <div className='bg-base-100 sidebar-bookmark-toggler z-20 flex h-full items-center gap-x-4 pe-2'>
-          <div className='hidden sm:flex'>
+          <div className='hidden sm:flex ml-4'>
             <SidebarToggler bookKey={bookKey} />
           </div>
           <BookmarkToggler bookKey={bookKey} />
-          <TranslationToggler bookKey={bookKey} />
           {/* Zoom controls next to Translate */}
           <Button
             icon={<FiZoomOut size={iconSize16} />}
@@ -208,7 +209,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
         <div className='bg-base-100 z-20 ml-auto flex h-full items-center space-x-4 ps-2'>
           <Button
-            icon={isAIVisible ? <FaStar size={iconSize16} /> : <FaRegStar size={iconSize16} />}
+            icon={isAIVisible ? <FaBrain size={iconSize16} /> : <LuBrain size={iconSize16} />}
             onClick={() => toggleAIVisible(bookKey)}
             tooltip={isAIVisible ? 'Hide AI' : 'Show AI'}
             tooltipDirection='bottom'

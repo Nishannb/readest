@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FiSearch } from 'react-icons/fi';
 import { FiCopy } from 'react-icons/fi';
 import { PiHighlighterFill } from 'react-icons/pi';
-import { FaRegStar } from 'react-icons/fa';
+import { LuBrain } from "react-icons/lu";
 import { BsPencilSquare } from 'react-icons/bs';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { BsTranslate } from 'react-icons/bs';
 import { TbHexagonLetterD } from 'react-icons/tb';
-import { FaHeadphones } from 'react-icons/fa6';
+
 
 import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
@@ -23,7 +23,6 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
-import { usePDFAnnotations } from '../../hooks/usePDFAnnotations';
 import { getPopupPosition, getPosition, Position, TextSelection } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/utils/toc';
@@ -77,7 +76,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const dictPopupHeight = Math.min(300, maxHeight);
   const transPopupWidth = Math.min(480, maxWidth);
   const transPopupHeight = Math.min(265, maxHeight);
-  const annotPopupWidth = Math.min(useResponsiveSize(300), maxWidth);
+  const annotPopupWidth = Math.min(useResponsiveSize(200), maxWidth);
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
@@ -107,14 +106,6 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     handleShowPopup,
     handleUpToPopup,
   } = useTextSelector(bookKey, setSelection, handleDismissPopup);
-
-  // PDF annotation handling
-  const {
-    createPDFAnnotation,
-    removePDFAnnotation,
-    updatePDFAnnotation,
-    isPDFBook
-  } = usePDFAnnotations(bookKey, view);
 
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -158,6 +149,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     const { draw, annotation, doc, range } = detail;
     const { style, color } = annotation as BookNote;
     const hexColor = color ? HIGHLIGHT_COLOR_HEX[color] : color;
+    
+    console.log('🎨 Drawing', style, 'annotation with color:', hexColor);
+    
     if (style === 'highlight') {
       draw(Overlayer.highlight, { color: hexColor });
     } else if (['underline', 'squiggly'].includes(style as string)) {
@@ -249,27 +243,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection, bookKey]);
 
-  useEffect(() => {
-    if (!progress) return;
-    const { location } = progress;
-    const start = CFI.collapse(location);
-    const end = CFI.collapse(location, true);
-    const { booknotes = [] } = config;
-    const annotations = booknotes.filter(
-      (item) =>
-        !item.deletedAt &&
-        item.type === 'annotation' &&
-        item.style &&
-        CFI.compare(item.cfi, start) >= 0 &&
-        CFI.compare(item.cfi, end) <= 0,
-    );
-    try {
-      Promise.all(annotations.map((annotation) => view?.addAnnotation(annotation)));
-    } catch (e) {
-      console.warn(e);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress]);
+  // Annotation loading is now handled by the FoliateViewer's onCreateOverlay event
 
   const handleShowAnnotPopup = () => {
     setShowAnnotPopup(true);
@@ -328,31 +302,9 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     handleDismissPopupAndSelection();
   };
 
-  const handleHighlight = (update = false) => {
+  const handleHighlight = async (update = false) => {
     if (!selection || !selection.text) return;
     setHighlightOptionsVisible(true);
-    
-    // Handle PDF annotations differently
-    if (isPDFBook && view?.book?.type === 'pdf') {
-      const style = settings.globalReadSettings.highlightStyle;
-      const color = settings.globalReadSettings.highlightStyles[style];
-      
-      // Create PDF annotation
-      const annotation = createPDFAnnotation(
-        document.getSelection()!,
-        style,
-        color,
-        selection.text,
-        ''
-      );
-      
-      if (annotation) {
-        setSelection({ ...selection, annotated: true });
-      }
-      return;
-    }
-    
-    // Handle EPUB annotations (existing logic)
     const { booknotes: annotations = [] } = config;
     const cfi = view?.getCFI(selection.index, selection.range);
     if (!cfi) return;
@@ -375,18 +327,55 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     );
     const views = getViewsById(bookKey.split('-')[0]!);
     if (existingIndex !== -1) {
-      views.forEach((view) => view?.addAnnotation(annotation, true));
+      // Remove old annotation from system
+      for (const view of views) {
+        if ((view as any).removeAnnotationFromSystem) {
+          try {
+            await (view as any).removeAnnotationFromSystem(annotation.cfi);
+          } catch (e) {
+            console.warn('Failed to remove annotation from system:', e);
+          }
+        }
+      }
+      
       if (update) {
         annotation.id = annotations[existingIndex]!.id;
         annotations[existingIndex] = annotation;
-        views.forEach((view) => view?.addAnnotation(annotation));
+        
+        // Add updated annotation to system
+        for (const view of views) {
+          if ((view as any).addAnnotationToSystem) {
+            try {
+              const resolved = await view.resolveNavigation(annotation.cfi);
+              if (resolved) {
+                await (view as any).addAnnotationToSystem(annotation, resolved.index);
+              }
+            } catch (e) {
+              console.warn('Failed to resolve navigation for annotation:', e);
+            }
+          }
+        }
       } else {
         annotations[existingIndex]!.deletedAt = Date.now();
         setShowAnnotPopup(false);
       }
     } else {
       annotations.push(annotation);
-      views.forEach((view) => view?.addAnnotation(annotation));
+      
+      // Add new annotation to system
+      for (const view of views) {
+        if ((view as any).addAnnotationToSystem) {
+          try {
+            const resolved = await view.resolveNavigation(annotation.cfi);
+            if (resolved) {
+              await (view as any).addAnnotationToSystem(annotation, resolved.index);
+            }
+          } catch (e) {
+            console.warn('Failed to resolve navigation for annotation:', e);
+          }
+        }
+      }
+      
       setSelection({ ...selection, annotated: true });
     }
 
@@ -396,11 +385,11 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
   };
 
-  const handleAnnotate = () => {
+  const handleAnnotate = async () => {
     if (!selection || !selection.text) return;
     const { sectionHref: href } = progress;
     selection.href = href;
-    handleHighlight(true);
+    await handleHighlight(true);
     setNotebookVisible(true);
     setNotebookNewAnnotation(selection);
     handleDismissPopup();
@@ -426,11 +415,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setShowDeepLPopup(true);
   };
 
-  const handleSpeakText = async () => {
-    if (!selection || !selection.text) return;
-    setShowAnnotPopup(false);
-    eventDispatcher.dispatch('tts-speak', { bookKey, range: selection.range });
-  };
+
 
   const handleExportMarkdown = (event: CustomEvent) => {
     const { bookKey: exportBookKey } = event.detail;
@@ -519,7 +504,7 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const selectionAnnotated = selection?.annotated;
   const buttons = [
-    { tooltipText: _('Copy'), Icon: FiCopy, onClick: handleCopy },
+    // { tooltipText: _('Copy'), Icon: FiCopy, onClick: handleCopy },
     {
       tooltipText: selectionAnnotated ? _('Delete Highlight') : _('Highlight'),
       Icon: selectionAnnotated ? RiDeleteBinLine : PiHighlighterFill,
@@ -527,10 +512,10 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     },
     { tooltipText: _('Annotate'), Icon: BsPencilSquare, onClick: handleAnnotate },
     { tooltipText: _('Search'), Icon: FiSearch, onClick: handleSearch },
-    { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
-    { tooltipText: _('Ask AI'), Icon: FaRegStar, onClick: handleAskAIFromSelection },
-    { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
-    { tooltipText: _('Speak'), Icon: FaHeadphones, onClick: handleSpeakText },
+    // { tooltipText: _('Dictionary'), Icon: TbHexagonLetterD, onClick: handleDictionary },
+    { tooltipText: _('Ask AI'), Icon: LuBrain, onClick: handleAskAIFromSelection },
+    // { tooltipText: _('Translate'), Icon: BsTranslate, onClick: handleTranslation },
+    // { tooltipText: _('Speak'), Icon: FaHeadphones, onClick: handleSpeakText },
   ];
 
   return (

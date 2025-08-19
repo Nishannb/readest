@@ -150,12 +150,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     }
   };
 
-  const toggleTTS = () => {
-    if (!sideBarBookKey) return;
-    const bookKey = sideBarBookKey;
-    const viewState = getViewState(bookKey);
-    eventDispatcher.dispatch(viewState?.ttsEnabled ? 'tts-stop' : 'tts-speak', { bookKey });
-  };
+
 
   useShortcuts(
     {
@@ -166,7 +161,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onOpenFontLayoutSettings: () => setFontLayoutSettingsDialogOpen(true),
       onToggleSearchBar: showSearchBar,
       onToggleFullscreen: toggleFullscreen,
-      onToggleTTS: toggleTTS,
+
       onReloadPage: reloadPage,
       onQuitApp: quitApp,
       onGoLeft: goLeft,

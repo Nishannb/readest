@@ -27,20 +27,13 @@ export const useProgressSync = (bookKey: string) => {
   const hasPulledConfigOnce = useRef(false);
 
   const pushConfig = (bookKey: string, config: BookConfig | null) => {
-    if (!config || !user) return;
-    const bookHash = bookKey.split('-')[0]!;
-    const newConfig = { ...config, bookHash };
-    const compressedConfig = JSON.parse(
-      serializeConfig(newConfig, settings.globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG),
-    );
-    delete compressedConfig.booknotes;
-    syncConfigs([compressedConfig], bookHash, 'push');
+    // No server sync - everything is local only
+    return;
   };
 
   const pullConfig = (bookKey: string) => {
-    if (!user) return;
-    const bookHash = bookKey.split('-')[0]!;
-    syncConfigs([], bookHash, 'pull');
+    // No server sync - everything is local only
+    return;
   };
 
   const syncConfig = async () => {

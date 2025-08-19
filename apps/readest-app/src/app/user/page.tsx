@@ -1,8 +1,6 @@
 'use client';
 
 import clsx from 'clsx';
-import Stripe from 'stripe';
-import posthog from 'posthog-js';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
@@ -15,7 +13,7 @@ import { UserPlan } from '@/types/user';
 import { navigateToLibrary, navigateToResetPassword } from '@/utils/nav';
 import { deleteUser } from '@/libs/user';
 import { eventDispatcher } from '@/utils/event';
-import { getStripe } from '@/libs/stripe/client';
+// Stripe removed
 import { getAPIBaseUrl, isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { getAccessToken } from '@/utils/access';
@@ -29,11 +27,11 @@ import UserInfo from './components/UserInfo';
 import UsageStats from './components/UsageStats';
 import PlansComparison from './components/PlansComparison';
 import AccountActions from './components/AccountActions';
-import Checkout from './components/Checkout';
+// Checkout removed
 
-const WEB_STRIPE_PLANS_URL = `${getAPIBaseUrl()}/stripe/plans`;
-const WEB_STRIPE_CHECKOUT_URL = `${getAPIBaseUrl()}/stripe/checkout`;
-const WEB_STRIPE_PORTAL_URL = `${getAPIBaseUrl()}/stripe/portal`;
+const WEB_STRIPE_PLANS_URL = '';
+const WEB_STRIPE_CHECKOUT_URL = '';
+const WEB_STRIPE_PORTAL_URL = '';
 const SUBSCRIPTION_SUCCESS_PATH = '/user/subscription/success';
 
 export type AvailablePlan = {
@@ -43,7 +41,7 @@ export type AvailablePlan = {
   currency: string;
   interval: string;
   productName: string;
-  product?: Stripe.Product;
+  product?: any;
 };
 
 type CheckoutState = {
@@ -109,35 +107,20 @@ const ProfilePage = () => {
   };
 
   const handleStripeSubscribe = async (priceId?: string) => {
-    const token = await getAccessToken();
-    const stripe = await getStripe();
-    if (!stripe) {
-      console.error('Stripe not loaded');
-      return;
-    }
+    const token = '';
     setLoading(true);
-    const isEmbeddedCheckout = isTauriAppPlatform();
-    const response = await fetch(WEB_STRIPE_CHECKOUT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ priceId, embedded: isEmbeddedCheckout }),
-    });
+    const isEmbeddedCheckout = false;
+    const response = { ok: false } as any;
     setLoading(false);
     if (!response.ok) {
       console.error('Failed to create Stripe checkout session');
-      posthog.capture('checkout_error', {
-        error: 'Failed to create Stripe checkout session',
-      });
       eventDispatcher.dispatch('toast', {
         type: 'info',
         message: _('Failed to create checkout session'),
       });
       return;
     }
-    const { sessionId, clientSecret, url } = await response.json();
+    const { sessionId, clientSecret, url } = {} as any;
 
     const selectedPlan = availablePlans.find((plan) => plan.price_id === priceId)!;
     const planName = selectedPlan.product?.name || selectedPlan.productName;
@@ -154,19 +137,8 @@ const ProfilePage = () => {
       } else if (isTauriAppPlatform()) {
         await openUrl(url);
       }
-    } else if (sessionId) {
-      const result = await stripe.redirectToCheckout({ sessionId });
-      if (result.error) {
-        console.error(result.error);
-        posthog.capture('checkout_error', {
-          error: 'Failed to redirect to checkout',
-        });
-      }
     } else {
       console.error('No sessionId or url returned from checkout API');
-      posthog.capture('checkout_error', {
-        error: 'No sessionId or url returned from checkout API',
-      });
     }
   };
 
@@ -239,14 +211,7 @@ const ProfilePage = () => {
 
   const handleManageSubscription = async () => {
     setLoading(true);
-    const token = await getAccessToken();
-    const response = await fetch(WEB_STRIPE_PORTAL_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = { json: async () => ({ url: '', error: 'not-supported' }) } as any;
     setLoading(false);
 
     const { url, error } = await response.json();
@@ -260,11 +225,7 @@ const ProfilePage = () => {
       return;
     }
 
-    if (isWebAppPlatform()) {
-      window.location.href = url;
-    } else if (isTauriAppPlatform()) {
-      await openUrl(url);
-    }
+    // no-op
   };
 
   useEffect(() => {
@@ -359,12 +320,7 @@ const ProfilePage = () => {
           )}
           {showEmbeddedCheckout ? (
             <div className='bg-base-100 rounded-lg p-4'>
-              <Checkout
-                clientSecret={checkoutState.clientSecret}
-                sessionId={checkoutState.sessionId}
-                planName={checkoutState.planName}
-                onSuccess={handleCheckoutSuccess}
-              />
+              <div className='text-sm opacity-70'>Embedded checkout not supported.</div>
             </div>
           ) : (
             <div className='sm:bg-base-200 overflow-hidden rounded-lg sm:p-6 sm:shadow-md'>

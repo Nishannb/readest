@@ -30,8 +30,8 @@ export const useNotesSync = (bookKey: string) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(
     debounce(() => {
-      const newNotes = getNewNotes();
-      syncNotes(newNotes, bookHash, 'both');
+      // No server sync - everything is local only
+      return;
     }, SYNC_NOTES_INTERVAL_SEC * 1000),
     [lastSyncedAtNotes],
   );

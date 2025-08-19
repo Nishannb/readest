@@ -1,4 +1,4 @@
-import { getAccessToken } from './access';
+// Local-only app: no access token needed
 
 export const fetchWithTimeout = (url: string, options: RequestInit = {}, timeout = 10000) => {
   const controller = new AbortController();
@@ -11,13 +11,11 @@ export const fetchWithTimeout = (url: string, options: RequestInit = {}, timeout
 };
 
 export const fetchWithAuth = async (url: string, options: RequestInit) => {
-  const token = await getAccessToken();
-  if (!token) {
-    throw new Error('Not authenticated');
-  }
+  const authToken = 'local-token';
+  
   const headers = {
     ...options.headers,
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${authToken}`,
   };
 
   const response = await fetch(url, { ...options, headers });

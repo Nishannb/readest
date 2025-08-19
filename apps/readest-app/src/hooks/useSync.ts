@@ -9,7 +9,7 @@ import { transformBookNoteFromDB } from '@/utils/transform';
 import { transformBookFromDB } from '@/utils/transform';
 import { DBBook, DBBookConfig, DBBookNote } from '@/types/records';
 import { Book, BookConfig, BookDataRecord, BookNote } from '@/types/book';
-import { navigateToLogin } from '@/utils/nav';
+
 
 const transformsFromDB = {
   books: transformBookFromDB,
@@ -84,78 +84,26 @@ export function useSync(bookKey?: string) {
     setSyncing: React.Dispatch<React.SetStateAction<boolean>>,
     bookId?: string,
   ) => {
+    // No server sync - everything is local only
     setSyncing(true);
     setSyncError(null);
-
-    try {
-      const result = await syncClient.pullChanges(since, type, bookId);
-      setSyncResult({ ...syncResult, [type]: result[type] });
-      const records = result[type];
-      if (!records?.length) return;
-      const maxTime = computeMaxTimestamp(records);
-      setLastSyncedAt(maxTime);
-
-      // due to closures in React hooks the settings might be stale
-      // we need to fetch the latest settings from store
-      const settings = useSettingsStore.getState().settings;
-      switch (type) {
-        case 'books':
-          settings.lastSyncedAtBooks = maxTime;
-          setSettings(settings);
-          break;
-        case 'configs':
-          if (!bookId) {
-            settings.lastSyncedAtConfigs = maxTime;
-            setSettings(settings);
-          } else if (bookKey && config) {
-            config.lastSyncedAtConfig = maxTime;
-            setConfig(bookKey, config);
-          }
-          break;
-        case 'notes':
-          if (!bookId) {
-            settings.lastSyncedAtNotes = maxTime;
-            setSettings(settings);
-          } else if (bookKey && config) {
-            config.lastSyncedAtNotes = maxTime;
-            setConfig(bookKey, config);
-          }
-          break;
-      }
-    } catch (err: unknown) {
-      console.error(err);
-      if (err instanceof Error) {
-        if (err.message.includes('Not authenticated') && settings.keepLogin) {
-          settings.keepLogin = false;
-          setSettings(settings);
-          navigateToLogin(router);
-        }
-        setSyncError(err.message || `Error pulling ${type}`);
-      } else {
-        setSyncError(`Error pulling ${type}`);
-      }
-    } finally {
-      setSyncing(false);
-    }
+    
+    // Simulate sync completion with empty result
+    setSyncResult({ ...syncResult, [type]: [] });
+    setLastSyncedAt(Date.now());
+    
+    setSyncing(false);
   };
 
   const pushChanges = async (payload: SyncData) => {
+    // No server sync - everything is local only
     setSyncing(true);
     setSyncError(null);
-
-    try {
-      const result = await syncClient.pushChanges(payload);
-      setSyncResult(result);
-    } catch (err: unknown) {
-      console.error(err);
-      if (err instanceof Error) {
-        setSyncError(err.message || 'Error pushing changes');
-      } else {
-        setSyncError('Error pushing changes');
-      }
-    } finally {
-      setSyncing(false);
-    }
+    
+    // Simulate successful push with empty result
+    setSyncResult({ books: [], configs: [], notes: [] });
+    
+    setSyncing(false);
   };
 
   const syncBooks = async (books?: Book[], op: SyncOp = 'both') => {

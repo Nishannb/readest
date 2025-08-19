@@ -3,12 +3,10 @@ import clsx from 'clsx';
 import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
-import { FaHeadphones } from 'react-icons/fa6';
 import { IoIosList as TOCIcon } from 'react-icons/io';
 import { PiNotePencil as NoteIcon } from 'react-icons/pi';
 import { RxSlider as SliderIcon } from 'react-icons/rx';
 import { RiFontFamily as FontIcon } from 'react-icons/ri';
-import { MdOutlineHeadphones as TTSIcon } from 'react-icons/md';
 import { TbBoxMargin } from 'react-icons/tb';
 import { RxLineHeight } from 'react-icons/rx';
 
@@ -25,7 +23,7 @@ import { PageInfo } from '@/types/book';
 import { Insets } from '@/types/misc';
 import Button from '@/components/Button';
 import Slider from '@/components/Slider';
-import TTSControl from './tts/TTSControl';
+
 
 interface FooterBarProps {
   bookKey: string;
@@ -118,21 +116,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
     view?.history.forward();
   };
 
-  const handleSpeakText = async () => {
-    if (!view || !progress || !viewState) return;
-    if (viewState.ttsEnabled) {
-      eventDispatcher.dispatch('tts-stop', { bookKey });
-    } else {
-      eventDispatcher.dispatch('tts-speak', { bookKey });
-    }
-  };
+
 
   const handleSetActionTab = (tab: string) => {
     setActionTab(actionTab === tab ? '' : tab);
-    if (tab === 'tts') {
-      setHoveredBookKey('');
-      handleSpeakText();
-    } else if (tab === 'toc') {
+    if (tab === 'toc') {
       setHoveredBookKey('');
       if (config && config.viewSettings) {
         config.viewSettings.sideBarTab = 'toc';
@@ -160,7 +148,6 @@ const FooterBar: React.FC<FooterBarProps> = ({
   };
 
   const isVisible = hoveredBookKey === bookKey;
-  const ttsEnabled = viewState?.ttsEnabled;
   const progressInfo = bookFormat === 'PDF' ? section : pageinfo;
   const progressValid = !!progressInfo;
   const progressFraction =
@@ -327,10 +314,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
             }
             onClick={() => handleSetActionTab('font')}
           />
-          <Button
-            icon={<TTSIcon className={ttsEnabled ? 'text-blue-500' : ''} />}
-            onClick={() => handleSetActionTab('tts')}
-          />
+
         </div>
         {/* Desktop / Pad footer bar */}
         <div
@@ -374,11 +358,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
               handleProgressChange(parseInt((e.target as HTMLInputElement).value, 10))
             }
           />
-          <Button
-            icon={<FaHeadphones className={ttsEnabled ? 'text-blue-500' : ''} />}
-            onClick={handleSpeakText}
-            tooltip={_('Speak')}
-          />
+
           <Button
             icon={viewSettings?.rtl ? <RiArrowLeftSLine /> : <RiArrowRightSLine />}
             onClick={viewSettings?.rtl ? handleGoPrevPage : handleGoNextPage}
@@ -391,7 +371,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
           />
         </div>
       </div>
-      <TTSControl bookKey={bookKey} />
+
     </>
   );
 };

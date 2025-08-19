@@ -1,18 +1,15 @@
 import { getAPIBaseUrl } from '@/services/environment';
 import { stubTranslation as _ } from '@/utils/misc';
-import { ErrorCodes, TranslationProvider } from '../types';
+import { TranslationProvider } from '../types';
 import { UserPlan } from '@/types/user';
-import { getUserPlan } from '@/utils/access';
 import { normalizeToShortLang } from '@/utils/lang';
-import { DEFAULT_DAILY_TRANSLATION_QUOTA } from '@/services/constants';
-import { saveDailyUsage } from '../utils';
 
 const DEEPL_API_ENDPOINT = getAPIBaseUrl() + '/deepl/translate';
 
 export const deeplProvider: TranslationProvider = {
   name: 'deepl',
   label: _('DeepL'),
-  authRequired: true,
+  authRequired: false,
   quotaExceeded: false,
   translate: async (
     text: string[],
@@ -21,21 +18,16 @@ export const deeplProvider: TranslationProvider = {
     token?: string | null,
     useCache: boolean = false,
   ): Promise<string[]> => {
-    const authRequired = deeplProvider.authRequired;
+
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
-    let userPlan: UserPlan = 'free';
-    if (token) {
-      userPlan = getUserPlan(token);
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    // No authentication required - all users get pro plan benefits
+    const userPlan: UserPlan = 'pro';
 
-    if (authRequired && !token) {
-      throw new Error('Authentication token is required for DeepL translation');
-    }
+    // Authentication no longer required - all users can access DeepL
 
     const body = JSON.stringify({
       text: text,
@@ -44,17 +36,13 @@ export const deeplProvider: TranslationProvider = {
       use_cache: useCache,
     });
 
-    const quota = DEFAULT_DAILY_TRANSLATION_QUOTA[userPlan];
+    // No quota enforcement - unlimited translations for all users
     try {
       const response = await fetch(DEEPL_API_ENDPOINT, { method: 'POST', headers, body });
 
       if (!response.ok) {
         const data = await response.json();
-        if (data && data.error && data.error === ErrorCodes.DAILY_QUOTA_EXCEEDED) {
-          saveDailyUsage(quota);
-          deeplProvider.quotaExceeded = true;
-          throw new Error(ErrorCodes.DAILY_QUOTA_EXCEEDED);
-        }
+            // No quota enforcement - all errors are treated the same
         throw new Error(`Translation failed with status ${response.status}`);
       }
 
@@ -68,10 +56,7 @@ export const deeplProvider: TranslationProvider = {
           return line;
         }
         const translation = data.translations?.[i];
-        if (translation?.daily_usage) {
-          saveDailyUsage(translation.daily_usage);
-          deeplProvider.quotaExceeded = data.daily_usage >= quota;
-        }
+        // No quota tracking needed
         return translation?.text || line;
       });
     } catch (error) {

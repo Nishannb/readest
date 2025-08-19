@@ -5,6 +5,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useAIChatStore } from '@/store/aiChatStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import Button from '@/components/Button';
@@ -19,9 +20,13 @@ const NotebookToggler: React.FC<NotebookTogglerProps> = ({ bookKey }) => {
   const { setHoveredBookKey } = useReaderStore();
   const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
   const { isNotebookVisible, toggleNotebook } = useNotebookStore();
+  const setAIVisible = useAIChatStore((s) => s.setVisible);
   const iconSize16 = useResponsiveSize(16);
 
   const handleToggleSidebar = () => {
+    // Close AI chat panel when notebook is toggled
+    setAIVisible(bookKey, false);
+    
     if (appService?.isMobile) {
       setHoveredBookKey('');
     }

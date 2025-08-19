@@ -104,5 +104,13 @@ export const useTheme = ({
       '--overlayer-highlight-blend-mode',
       isDarkMode ? 'lighten' : 'normal',
     );
+    document.documentElement.style.setProperty(
+      '--overlayer-highlight-opacity',
+      '0.6',
+    );
+    document.documentElement.style.setProperty(
+      '--search-highlight-color',
+      isDarkMode ? '#ffff00' : '#ffeb3b',
+    );
   }, [themeColor, isDarkMode]);
 };

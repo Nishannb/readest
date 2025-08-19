@@ -7,6 +7,7 @@ import { MdArrowBackIosNew } from 'react-icons/md';
 
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
+import { useAIChatStore } from '@/store/aiChatStore';
 import Dropdown from '@/components/Dropdown';
 import BookMenu from './BookMenu';
 
@@ -17,11 +18,20 @@ const SidebarHeader: React.FC<{
   onClose: () => void;
   onTogglePin: () => void;
   onToggleSearchBar: () => void;
-}> = ({ isPinned, isSearchBarVisible, onGoToLibrary, onClose, onTogglePin, onToggleSearchBar }) => {
+  bookKey: string;
+}> = ({ isPinned, isSearchBarVisible, onGoToLibrary, onClose, onTogglePin, onToggleSearchBar, bookKey }) => {
   const { isTrafficLightVisible } = useTrafficLightStore();
+  const setAIVisible = useAIChatStore((s) => s.setVisible);
   const iconSize14 = useResponsiveSize(14);
   const iconSize18 = useResponsiveSize(18);
   const iconSize22 = useResponsiveSize(22);
+
+  const handleDropdownOpen = (isOpen: boolean) => {
+    // Close AI chat panel when three-dot menu opens
+    if (isOpen) {
+      setAIVisible(bookKey, false);
+    }
+  };
 
   return (
     <div
@@ -64,7 +74,7 @@ const SidebarHeader: React.FC<{
           buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
           toggleButton={<MdOutlineMenu className='fill-base-content' />}
         >
-          <BookMenu />
+          <BookMenu setIsDropdownOpen={handleDropdownOpen} />
         </Dropdown>
         <div className='right-0 hidden h-8 w-8 items-center justify-center sm:flex'>
           <button

@@ -1,6 +1,5 @@
 import { Book, BookConfig, BookNote, BookDataRecord } from '@/types/book';
 import { getAPIBaseUrl } from '@/services/environment';
-import { getAccessToken } from '@/utils/access';
 import { fetchWithTimeout } from '@/utils/fetch';
 
 const SYNC_API_ENDPOINT = getAPIBaseUrl() + '/sync';
@@ -30,15 +29,15 @@ export class SyncClient {
    * Returns updated or deleted records since that time.
    */
   async pullChanges(since: number, type?: SyncType, book?: string): Promise<SyncResult> {
-    const token = await getAccessToken();
-    if (!token) throw new Error('Not authenticated');
+    // Local-only app: use fixed auth token
+    const authToken = 'local-token';
 
     const url = `${SYNC_API_ENDPOINT}?since=${encodeURIComponent(since)}&type=${type ?? ''}&book=${book ?? ''}`;
     const res = await fetchWithTimeout(
       url,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
         },
       },
       8000,
@@ -57,8 +56,8 @@ export class SyncClient {
    * Uses last-writer-wins logic as implemented on the server side.
    */
   async pushChanges(payload: SyncData): Promise<SyncResult> {
-    const token = await getAccessToken();
-    if (!token) throw new Error('Not authenticated');
+    // Local-only app: use fixed auth token
+    const authToken = 'local-token';
 
     const res = await fetchWithTimeout(
       SYNC_API_ENDPOINT,
@@ -66,7 +65,7 @@ export class SyncClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify(payload),
       },

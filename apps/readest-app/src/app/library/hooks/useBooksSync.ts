@@ -20,14 +20,13 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
   const syncBooksPullingRef = useRef(false);
 
   const pullLibrary = async () => {
-    if (!user) return;
-    syncBooks([], 'pull');
+    // No server sync - everything is local only
+    return;
   };
 
   const pushLibrary = async () => {
-    if (!user) return;
-    const newBooks = getNewBooks();
-    syncBooks(newBooks, 'push');
+    // No server sync - everything is local only
+    return;
   };
 
   useEffect(() => {
@@ -50,8 +49,8 @@ export const useBooksSync = ({ onSyncStart, onSyncEnd }: UseBooksSyncProps) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(
     debounce(() => {
-      const newBooks = getNewBooks();
-      syncBooks(newBooks, 'both');
+      // No server sync - everything is local only
+      return;
     }, SYNC_BOOKS_INTERVAL_SEC * 1000),
     [library, lastSyncedAtBooks],
   );

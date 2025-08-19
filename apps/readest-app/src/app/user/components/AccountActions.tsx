@@ -92,16 +92,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
           >
             {_('Restore Purchase')}
           </button>
-        ) : (
-          userPlan !== 'free' && (
-            <button
-              onClick={onManageSubscription}
-              className='w-full rounded-lg bg-blue-100 px-6 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-200 md:w-auto'
-            >
-              {_('Manage Subscription')}
-            </button>
-          )
-        )}
+        ) : null}
         <button
           onClick={onResetPassword}
           className='w-full rounded-lg bg-gray-200 px-6 py-3 font-medium text-gray-800 transition-colors hover:bg-gray-300 md:w-auto'

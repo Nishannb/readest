@@ -1,29 +1,21 @@
 import clsx from 'clsx';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PiUserCircle } from 'react-icons/pi';
-import { PiUserCircleCheck } from 'react-icons/pi';
 import { MdCheck } from 'react-icons/md';
 import { TbSunMoon } from 'react-icons/tb';
 import { BiMoon, BiSun } from 'react-icons/bi';
 
 import { setAboutDialogVisible } from '@/components/AboutWindow';
-import { setKOSyncSettingsWindowVisible } from './KOSyncSettings';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
-import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
-import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
-import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
-import Quota from '@/components/Quota';
 
 interface SettingsMenuProps {
   setIsDropdownOpen?: (isOpen: boolean) => void;
@@ -33,8 +25,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
   const { envConfig, appService } = useEnv();
-  const { user } = useAuth();
-  const { userPlan, quotas } = useQuotaStats(true);
+
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
@@ -59,15 +50,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setIsDropdownOpen?.(false);
   };
 
-  const handleUserLogin = () => {
-    navigateToLogin(router);
-    setIsDropdownOpen?.(false);
-  };
 
-  const handleUserProfile = () => {
-    navigateToProfile(router);
-    setIsDropdownOpen?.(false);
-  };
 
   const cycleThemeMode = () => {
     const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
@@ -108,16 +91,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setIsDropdownOpen?.(false);
   };
 
-  const toggleAutoUploadBooks = () => {
-    settings.autoUpload = !settings.autoUpload;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-    setIsAutoUpload(settings.autoUpload);
-
-    if (settings.autoUpload && !user) {
-      navigateToLogin(router);
-    }
-  };
 
   const toggleAutoImportBooksOnOpen = () => {
     settings.autoImportBooksOnOpen = !settings.autoImportBooksOnOpen;
@@ -159,19 +132,14 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
     setIsTelemetryEnabled(settings.telemetryEnabled);
   };
 
-  const showKoSyncSettingsWindow = () => {
-    setKOSyncSettingsWindowVisible(true);
-    setIsDropdownOpen?.(false);
-  };
+
 
   const handleUpgrade = () => {
-    navigateToProfile(router);
+    // navigateToProfile(router); // This line was removed
     setIsDropdownOpen?.(false);
   };
 
-  const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
-  const userFullName = user?.user_metadata?.['full_name'];
-  const userDisplayName = userFullName ? userFullName.split(' ')[0] : null;
+
 
   return (
     <div
@@ -181,37 +149,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         'z-20 mt-2 max-w-[90vw] shadow-2xl',
       )}
     >
-      {user ? (
-        <MenuItem
-          label={
-            userDisplayName
-              ? _('Logged in as {{userDisplayName}}', { userDisplayName })
-              : _('Logged in')
-          }
-          labelClass='!max-w-40'
-          Icon={
-            avatarUrl ? (
-              <UserAvatar url={avatarUrl} size={iconSize} DefaultIcon={PiUserCircleCheck} />
-            ) : (
-              PiUserCircleCheck
-            )
-          }
-        >
-          <ul>
-            <div onClick={handleUserProfile} className='cursor-pointer'>
-              <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
-            </div>
-            <MenuItem label={_('Account')} noIcon onClick={handleUserProfile} />
-          </ul>
-        </MenuItem>
-      ) : (
-        <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
-      )}
-      <MenuItem
-        label={_('Auto Upload Books to Cloud')}
-        Icon={isAutoUpload ? MdCheck : undefined}
-        onClick={toggleAutoUploadBooks}
-      />
+      {/* Authentication no longer required - all features are free */}
       {isTauriAppPlatform() && !appService?.isMobile && (
         <MenuItem
           label={_('Auto Import on File Open')}
@@ -234,13 +172,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         />
       )}
       <hr className='border-base-200 my-1' />
-      {appService?.hasWindow && (
-        <MenuItem
-          label={_('Open Book in New Window')}
-          Icon={settings.openBookInNewWindow ? MdCheck : undefined}
-          onClick={toggleOpenInNewWindow}
-        />
-      )}
       {appService?.hasWindow && <MenuItem label={_('Fullscreen')} onClick={handleFullScreen} />}
       {appService?.hasWindow && (
         <MenuItem
@@ -274,19 +205,15 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ setIsDropdownOpen }) => {
         onClick={cycleThemeMode}
       />
       <hr className='border-base-200 my-1' />
-      <MenuItem label={_('KOReader Sync')} onClick={showKoSyncSettingsWindow} />
-      <hr className='border-base-200 my-1' />
-      {user && userPlan === 'free' && !appService?.isIOSApp && (
-        <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />
-      )}
+      {/* Premium upgrade no longer required - all features are free */}
       {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
       <MenuItem label={_('About Readest')} onClick={showAboutReadest} />
-      <MenuItem
+      {/* <MenuItem
         label={_('Help improve Readest')}
         description={isTelemetryEnabled ? _('Sharing anonymized statistics') : ''}
         Icon={isTelemetryEnabled ? MdCheck : undefined}
         onClick={toggleTelemetry}
-      />
+      /> */}
     </div>
   );
 };

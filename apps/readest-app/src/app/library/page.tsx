@@ -9,7 +9,7 @@ import 'overlayscrollbars/overlayscrollbars.css';
 
 import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
-import { navigateToLogin, navigateToReader } from '@/utils/nav';
+import { navigateToReader } from '@/utils/nav';
 import {
   formatAuthors,
   formatTitle,
@@ -28,7 +28,7 @@ import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 
 import { useEnv } from '@/context/EnvContext';
-import { useAuth } from '@/context/AuthContext';
+
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -48,7 +48,7 @@ import {
 } from '@/utils/window';
 
 import { AboutWindow } from '@/components/AboutWindow';
-import { KOSyncSettingsWindow } from './components/KOSyncSettings';
+
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { BookMetadata } from '@/libs/document';
 import { BookDetailModal } from '@/components/metadata';
@@ -67,7 +67,7 @@ const LibraryPageWithSearchParams = () => {
 const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchParams | null }) => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
-  const { token, user } = useAuth();
+
   const {
     library: libraryBooks,
     updateBook,
@@ -324,17 +324,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     isInitiating.current = true;
 
     const initLogin = async () => {
-      const appService = await envConfig.getAppService();
-      const settings = await appService.loadSettings();
-      if (token && user) {
-        if (!settings.keepLogin) {
-          settings.keepLogin = true;
-          setSettings(settings);
-          saveSettings(envConfig, settings);
-        }
-      } else if (settings.keepLogin) {
-        router.push('/auth');
-      }
+      // No authentication required - all users are automatically authenticated
     };
 
     const loadingTimeout = setTimeout(() => setLoading(true), 300);
@@ -410,10 +400,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       try {
         const book = await appService?.importBook(file, library);
         setLibrary([...library]);
-        if (user && book && !book.uploadedAt && settings.autoUpload) {
-          console.log('Uploading book:', book.title);
-          handleBookUpload(book);
-        }
+        // No auto-upload - everything is local only
       } catch (error) {
         const filename = typeof file === 'string' ? file : file.name;
         const baseFilename = getFilename(filename);
@@ -488,19 +475,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         });
         return true;
       } catch (err) {
-        if (err instanceof Error) {
-          if (err.message.includes('Not authenticated') && settings.keepLogin) {
-            settings.keepLogin = false;
-            setSettings(settings);
-            navigateToLogin(router);
-            return false;
-          } else if (err.message.includes('Insufficient storage quota')) {
-            eventDispatcher.dispatch('toast', {
-              type: 'error',
-              message: _('Insufficient storage quota'),
-            });
-            return false;
-          }
+        if (err instanceof Error && err.message.includes('Insufficient storage quota')) {
+          eventDispatcher.dispatch('toast', {
+            type: 'error',
+            message: _('Insufficient storage quota'),
+          });
+          return false;
         }
         eventDispatcher.dispatch('toast', {
           type: 'error',
@@ -754,7 +734,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         />
       )}
       <AboutWindow />
-      <KOSyncSettingsWindow />
+      
       <UpdaterWindow />
       <Toast />
     </div>

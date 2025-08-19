@@ -78,7 +78,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       className={clsx('book-menu dropdown-content border-base-100 z-20 shadow-2xl', menuClassName)}
     >
       <MenuItem
-        label={_('Parallel Read')}
+        label={_('Parallel Read (ePub only)')}
         buttonClass={bookKeys.length > 1 ? 'lg:tooltip lg:tooltip-bottom' : ''}
         tooltip={parallelViews.length > 0 ? _('Disable') : bookKeys.length > 1 ? _('Enable') : ''}
         Icon={parallelViews.length > 0 && bookKeys.length > 1 ? MdCheck : undefined}

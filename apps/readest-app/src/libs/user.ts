@@ -1,15 +1,12 @@
 import { getAPIBaseUrl } from '@/services/environment';
-import { getUserID } from '@/utils/access';
 import { fetchWithAuth } from '@/utils/fetch';
 
 const API_ENDPOINT = getAPIBaseUrl() + '/user/delete';
 
 export const deleteUser = async () => {
   try {
-    const userId = await getUserID();
-    if (!userId) {
-      throw new Error('Not authenticated');
-    }
+    // Local-only app: noop user id
+    const userIdForDeletion = 'local-user-id';
 
     await fetchWithAuth(API_ENDPOINT, {
       method: 'DELETE',

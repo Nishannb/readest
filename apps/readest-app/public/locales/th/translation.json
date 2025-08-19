@@ -261,7 +261,7 @@
   "Font & Layout": "ฟอนต์และเลย์เอาต์",
   "Book Cover": "ปกหนังสือ",
   "More Info": "ข้อมูลเพิ่มเติม",
-  "Parallel Read": "อ่านคู่ขนาน",
+  "Parallel Read (ePub only)": "อ่านคู่ขนาน",
   "Disable": "ปิด",
   "Enable": "เปิด",
   "Export Annotations": "ส่งออกบันทึก",

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { getAppleIAPVerifier } from '@/libs/iap/apple/verifier';
 import { createSupabaseAdminClient } from '@/utils/supabase';
-import { validateUserAndToken } from '@/utils/access';
+// Local-only app: accept all requests without token validation
 import { IAPError } from '@/types/error';
 
 const iapVerificationSchema = z.object({
@@ -117,10 +117,7 @@ export async function POST(request: Request) {
   }
   const { transactionId, originalTransactionId } = validatedInput!;
 
-  const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
-  if (!user || !token) {
-    return NextResponse.json({ error: IAPError.NOT_AUTHENTICATED }, { status: 403 });
-  }
+  const user = { id: 'local-user-id', email: 'user@readest.local' } as any;
 
   try {
     const supabase = createSupabaseAdminClient();

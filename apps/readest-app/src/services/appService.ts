@@ -117,16 +117,13 @@ export abstract class BaseAppService implements AppService {
         ...settings.globalViewSettings,
       };
 
-      if (!settings.koreaderSyncDeviceId) {
-        settings.koreaderSyncDeviceId = uuidv4();
-        await this.fs.writeFile(fp, base, JSON.stringify(settings));
-      }
+
     } catch {
       settings = {
         ...DEFAULT_SYSTEM_SETTINGS,
         version: SYSTEM_SETTINGS_VERSION,
         localBooksDir: await this.fs.getPrefix('Books'),
-        koreaderSyncDeviceId: uuidv4(),
+
         globalReadSettings: {
           ...DEFAULT_READSETTINGS,
           ...(this.isMobile ? DEFAULT_MOBILE_READSETTINGS : {}),
