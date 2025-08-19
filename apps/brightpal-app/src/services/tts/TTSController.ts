@@ -1,7 +1,7 @@
 import { FoliateView } from '@/types/view';
 import { AppService } from '@/types/system';
 import { parseSSMLMarks } from '@/utils/ssml';
-import { Overlayer } from 'foliate-js/overlayer.js';
+import { Overlayer } from '@readest/foliate-js/overlayer.js';
 import { TTSGranularity, TTSHighlightOptions, TTSMark, TTSVoice } from './types';
 import { createRejecttFilter } from '@/utils/node';
 import { WebSpeechClient } from './WebSpeechClient';

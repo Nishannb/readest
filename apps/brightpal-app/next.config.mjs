@@ -42,7 +42,7 @@ const nextConfig = {
         '@ducanh2912/next-pwa',
         '@tauri-apps',
         'highlight.js',
-        'foliate-js',
+        '@readest/foliate-js',
         'marked',
       ]
     : [],

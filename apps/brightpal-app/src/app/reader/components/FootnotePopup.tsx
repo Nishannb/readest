@@ -6,7 +6,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { getFootnoteStyles, getStyles, getThemeCode } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
-import { FootnoteHandler } from 'foliate-js/footnotes.js';
+import { FootnoteHandler } from '@readest/foliate-js/footnotes.js';
 import { mountAdditionalFonts } from '@/utils/font';
 import { eventDispatcher } from '@/utils/event';
 import { FoliateView } from '@/types/view';
