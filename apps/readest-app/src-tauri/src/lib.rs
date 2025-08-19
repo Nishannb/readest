@@ -110,6 +110,22 @@ fn get_environment_variable(name: &str) -> String {
     std::env::var(String::from(name)).unwrap_or(String::from(""))
 }
 
+#[tauri::command]
+async fn execute_command(command: &str, args: Vec<String>) -> Result<String, String> {
+    use std::process::Command;
+    
+    let output = Command::new(command)
+        .args(args)
+        .output()
+        .map_err(|e| e.to_string())?;
+    
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    }
+}
+
 #[derive(Clone, serde::Serialize)]
 #[allow(dead_code)]
 struct Payload {
@@ -127,6 +143,7 @@ pub fn run() {
             download_file,
             upload_file,
             get_environment_variable,
+            execute_command,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]

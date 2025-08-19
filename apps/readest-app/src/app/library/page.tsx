@@ -54,6 +54,7 @@ import { BookMetadata } from '@/libs/document';
 import { BookDetailModal } from '@/components/metadata';
 import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -743,15 +744,17 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
 const LibraryPage = () => {
   return (
-    <Suspense
-      fallback={
-        <div className='fixed inset-0 z-50 flex items-center justify-center'>
-          <Spinner loading />
-        </div>
-      }
-    >
-      <LibraryPageWithSearchParams />
-    </Suspense>
+    <ProtectedRoute>
+      <Suspense
+        fallback={
+          <div className='fixed inset-0 z-50 flex items-center justify-center'>
+            <Spinner loading />
+          </div>
+        }
+      >
+        <LibraryPageWithSearchParams />
+      </Suspense>
+    </ProtectedRoute>
   );
 };
 

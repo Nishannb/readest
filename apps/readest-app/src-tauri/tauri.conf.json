@@ -15,7 +15,7 @@
     "security": {
       "csp": {
         "default-src": "'self' 'unsafe-inline' blob: data: customprotocol: asset: http://asset.localhost ipc: http://ipc.localhost",
-        "connect-src": "'self' blob: data: asset: http://asset.localhost ipc: http://ipc.localhost http://192.168.1.7:11500 https://*.sentry.io https://*.deepl.com https://*.wikipedia.org https://*.wiktionary.org https://*.readest.com wss://speech.platform.bing.com https://*.cloudflarestorage.com https://translate.googleapis.com https://translate.toil.cc https://*.microsofttranslator.com https://edge.microsoft.com https://*.googleusercontent.com",
+        "connect-src": "'self' blob: data: asset: http://asset.localhost ipc: http://ipc.localhost http://192.168.1.7:11500 https://*.sentry.io https://*.deepl.com https://*.wikipedia.org https://*.wiktionary.org https://*.readest.com wss://speech.platform.bing.com https://*.cloudflarestorage.com https://translate.googleapis.com https://translate.toil.cc https://*.microsofttranslator.com https://edge.microsoft.com https://*.googleusercontent.com https://sclbiwke3f.execute-api.ap-northeast-1.amazonaws.com https://*.stripe.com",
         "img-src": "'self' blob: data: asset: http://asset.localhost https://*",
         "style-src": "'self' 'unsafe-inline' blob: asset: http://asset.localhost https://cdn.jsdelivr.net https://fonts.googleapis.com https://chinese-fonts-cdn.netlify.app",
         "font-src": "'self' blob: data: asset: http://asset.localhost tauri: https://db.onlinewebfonts.com https://cdn.jsdelivr.net https://fonts.gstatic.com https://chinese-fonts-cdn.netlify.app",
