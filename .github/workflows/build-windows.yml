@@ -38,25 +38,47 @@ jobs:
         
     - name: Show directory structure
       run: |
+        echo "=== Root Directory Structure ==="
         dir
         echo "Current directory: %CD%"
+        echo.
+        echo "=== Workspace Configuration ==="
+        type pnpm-workspace.yaml
+        echo.
+        echo "=== Package.json Dependencies ==="
+        type apps\brightpal-app\package.json | findstr "foliate-js"
+        echo.
+        echo "=== Packages Directory ==="
+        dir packages
         
     - name: Install dependencies
       run: |
-        cd apps/brightpal-app
-        dir
-        echo "App directory: %CD%"
+        echo "Installing workspace dependencies from root..."
         pnpm install
+        echo "Dependencies installed successfully"
+        
+    - name: Verify workspace setup
+      run: |
+        echo "=== Verifying Workspace Setup ==="
+        pnpm list --depth=0
+        echo.
+        echo "=== Checking foliate-js package ==="
+        pnpm list foliate-js
+        echo.
+        echo "=== Workspace packages ==="
+        pnpm list --filter=@brightpal/brightpal-app
         
     - name: Build frontend
       run: |
         cd apps/brightpal-app
+        echo "Building frontend from: %CD%"
         pnpm build
         
     - name: Build Windows x64 app
       run: |
         cd apps/brightpal-app
-        cargo tauri build --target x86_64-pc-windows-msvc
+        echo "Building Windows app from: %CD%"
+        pnpm build-win-x64
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
