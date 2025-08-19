@@ -1,8 +1,8 @@
 const pdfjsPath = path => `/vendor/pdfjs/${path}`
 
-import './vendor/pdfjs/pdf.mjs'
+import 'pdfjs-dist/legacy/build/pdf.mjs'
 const pdfjsLib = globalThis.pdfjsLib
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsPath('pdf.worker.min.mjs')
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.mjs'
 
 const fetchText = async url => await (await fetch(url)).text()
 
