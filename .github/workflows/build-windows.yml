@@ -114,20 +114,27 @@ jobs:
           echo Root directory contents:
           dir
           echo.
+          echo App directory contents:
+          dir apps\brightpal-app
+          echo.
           echo src-tauri directory:
-          dir src-tauri
+          if exist "apps\brightpal-app\src-tauri" (
+            dir apps\brightpal-app\src-tauri
+          ) else (
+            echo src-tauri directory not found in apps\brightpal-app
+          )
           echo.
           echo Target directory structure:
-          if exist "src-tauri\target" (
-            dir src-tauri\target
-            if exist "src-tauri\target\x86_64-pc-windows-msvc" (
-              dir src-tauri\target\x86_64-pc-windows-msvc
-              if exist "src-tauri\target\x86_64-pc-windows-msvc\release" (
-                dir src-tauri\target\x86_64-pc-windows-msvc\release
-                if exist "src-tauri\target\x86_64-pc-windows-msvc\release\bundle" (
-                  dir src-tauri\target\x86_64-pc-windows-msvc\release\bundle
-                  if exist "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis" (
-                    dir src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis
+          if exist "apps\brightpal-app\src-tauri\target" (
+            dir apps\brightpal-app\src-tauri\target
+            if exist "apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc" (
+              dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc
+              if exist "apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release" (
+                dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release
+                if exist "apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle" (
+                  dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle
+                  if exist "apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis" (
+                    dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis
                   ) else (
                     echo NSIS directory not found
                   )
@@ -141,12 +148,12 @@ jobs:
               echo x86_64-pc-windows-msvc directory not found
             )
           ) else (
-            echo Target directory not found
+            echo Target directory not found in apps\brightpal-app\src-tauri
           )
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: brightpal-windows-x64
-          path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
+          path: apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
           retention-days: 30
