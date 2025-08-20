@@ -107,15 +107,46 @@ jobs:
         run: |
           echo === Build Artifacts Created ===
           echo.
-          echo Checking target directory:
-          dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle
+          echo Current directory: %CD%
           echo.
-          echo Checking NSIS installer:
-          dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis
+          echo === Directory Structure After Build ===
+          echo.
+          echo Root directory contents:
+          dir
+          echo.
+          echo src-tauri directory:
+          dir src-tauri
+          echo.
+          echo Target directory structure:
+          if exist "src-tauri\target" (
+            dir src-tauri\target
+            if exist "src-tauri\target\x86_64-pc-windows-msvc" (
+              dir src-tauri\target\x86_64-pc-windows-msvc
+              if exist "src-tauri\target\x86_64-pc-windows-msvc\release" (
+                dir src-tauri\target\x86_64-pc-windows-msvc\release
+                if exist "src-tauri\target\x86_64-pc-windows-msvc\release\bundle" (
+                  dir src-tauri\target\x86_64-pc-windows-msvc\release\bundle
+                  if exist "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis" (
+                    dir src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis
+                  ) else (
+                    echo NSIS directory not found
+                  )
+                ) else (
+                  echo Bundle directory not found
+                )
+              ) else (
+                echo Release directory not found
+              )
+            ) else (
+              echo x86_64-pc-windows-msvc directory not found
+            )
+          ) else (
+            echo Target directory not found
+          )
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: brightpal-windows-x64
-          path: apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
+          path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
           retention-days: 30
