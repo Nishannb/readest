@@ -33,6 +33,10 @@ jobs:
           target: x86_64-pc-windows-msvc
           override: true
           
+      - name: Install NSIS
+        run: |
+          choco install nsis -y
+          
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -95,12 +99,15 @@ jobs:
           echo Building frontend from: %CD%
           pnpm build
           
-      - name: Build Windows x64 app
+      - name: Build Windows x64 app (with retry)
         shell: cmd
+        env:
+          TAURI_SKIP_UPDATER_COMPATIBILITY_CHECK: true
         run: |
           cd apps\brightpal-app
           echo Building Windows app from: %CD%
-          pnpm build-win-x64
+          echo === First attempt ===
+          pnpm build-win-x64 || (echo === First attempt failed, retrying in 30 seconds === & timeout /t 30 & pnpm build-win-x64) || (echo === Second attempt failed, retrying in 60 seconds === & timeout /t 60 & pnpm build-win-x64)
           
       - name: Show build artifacts
         shell: cmd
@@ -131,6 +138,8 @@ jobs:
               dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc
               if exist "apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release" (
                 dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release
+                echo === Release directory contents ===
+                dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release
                 if exist "apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle" (
                   dir apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle
                   if exist "apps\brightpal-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis" (
@@ -151,8 +160,19 @@ jobs:
             echo Target directory not found in apps\brightpal-app\src-tauri
           )
           
+      - name: Upload executable (if bundle failed)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: brightpal-executable
+          path: |
+            apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/brightpal.exe
+            apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/*.exe
+          retention-days: 30
+          
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: brightpal-windows-x64
           path: apps/brightpal-app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
